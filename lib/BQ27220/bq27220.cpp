@@ -57,14 +57,51 @@ uint32_t BQ27220::get_dev_id(BQ27220_TypeDef& dataSTR) {
     return (uint32_t)readWord(BQ_SUB) << 16 | readWord(BQ_SUB+2);
 }
 
-void BQ27220::unseal(BQ27220_TypeDef& dataSTR) {
+void BQ27220::unseal() {
     writeWord(BQ_CNTL, 0x0414);
     delay(5);
     writeWord(BQ_CNTL, 0x3672);
     delay(5);
 }
 
-void BQ27220::seal(BQ27220_TypeDef& dataSTR) {
+void BQ27220::seal() {
     writeWord(BQ_CNTL, 0x0030);
     delay(5);
 }
+
+void BQ27220::read_temp(BQ27220_TypeDef& dataSTR) {
+    unseal();
+    dataSTR.tempReg = readWord(BQ_TEMP);
+    return;
+}
+
+void BQ27220::read_vlotage(BQ27220_TypeDef& dataSTR) {
+    unseal();
+    dataSTR.voltReg = readWord(BQ_VOLT);
+    return;
+}
+
+void BQ27220::battery_status(BQ27220_TypeDef& dataSTR) {
+    unseal();
+    dataSTR.flagsReg = readWord(BQ_FLAGS);
+    return;
+}
+
+void BQ27220::remaining_capacity(BQ27220_TypeDef& dataSTR) {
+    unseal();
+    dataSTR.rmReg = readWord(BQ_RM);
+    return;
+}
+
+void BQ27220::state_of_charge(BQ27220_TypeDef& dataSTR) {
+    unseal();
+    dataSTR.socReg = readWord(BQ_SOC);
+    return;
+}
+
+void BQ27220::current(BQ27220_TypeDef& dataSTR) {
+    unseal();
+    dataSTR.currentReg = readWord(BQ_SOC);
+    return;
+}
+

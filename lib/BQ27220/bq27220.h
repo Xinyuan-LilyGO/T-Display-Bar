@@ -382,12 +382,17 @@ public:
     } BQ27220_TypeDef;
 
     BQ27220(uint8_t sda_pin, uint8_t scl_pin, uint32_t freq = 100000);
-    int read_registers(BQ27220_TypeDef& dataSTR);
-    uint32_t get_dev_id(BQ27220_TypeDef& dataSTR);
-    void unseal(BQ27220_TypeDef& dataSTR);
-    void seal(BQ27220_TypeDef& dataSTR);
+    int read_registers(BQ27220_TypeDef &dataSTR);
+    void read_temp(BQ27220_TypeDef &dataSTR);
+    void read_vlotage(BQ27220_TypeDef &dataSTR);
+    void battery_status(BQ27220_TypeDef &dataSTR);
+    void remaining_capacity(BQ27220_TypeDef& dataSTR);
+    void state_of_charge(BQ27220_TypeDef& dataSTR);
+    void current(BQ27220_TypeDef& dataSTR);
+    uint32_t get_dev_id(BQ27220_TypeDef &dataSTR);
+    void unseal();
+    void seal();
 
-    
 private:
     uint8_t _addr;
     uint8_t _sda;

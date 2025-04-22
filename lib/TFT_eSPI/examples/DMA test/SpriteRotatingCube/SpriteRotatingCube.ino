@@ -38,8 +38,8 @@
 
 // 128x128 for a 16 bit colour Sprite (32Kbytes RAM)
 // Maximum is 181x181 (64Kbytes) for DMA -  restricted by processor design
-#define IWIDTH  128
-#define IHEIGHT 128
+#define IWIDTH  284
+#define IHEIGHT 76
 
 // Size of cube image
 // 358 is max for 128x128 sprite, too big and pixel trails are drawn...

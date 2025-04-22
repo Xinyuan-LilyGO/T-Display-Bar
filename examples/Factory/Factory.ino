@@ -17,7 +17,8 @@ void handleRoot();
 void handleConfigure();
 void sycn_init();
 void model_init();
-void lvgl_init();
+void lvgl_drv_init();
+void Openinganimation();
 void time_sync_notification_handler(timeval *t);
 void get_weather(const String &city, const String &apiKey);
 static void WiFiEvent(WiFiEvent_t event);
@@ -31,21 +32,23 @@ void Button2_Callback(ButtonState event);
 void Button3_Callback(ButtonState event);
 
 /*****var******/
-#define BUFFER_SIZE (TFT_HEIGHT * 5)
+#define BUFFER_SIZE (TFT_WIDTH * TFT_HEIGHT)
+
 static lv_disp_draw_buf_t draw_buf;
 static lv_color_t buf1[BUFFER_SIZE];
 static lv_color_t buf2[BUFFER_SIZE];
-TFT_eSPI tft = TFT_eSPI();
+TFT_eSPI tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 TouchDrvCSTXXX touch;
 int16_t x[2], y[2];
 int16_t move_X = 0;
 
+SPIClass SDSPI(HSPI);
 XPowersPPM PPM;
 Power_info power_info;
-BQ27220 bq27220(I2C_SDA, I2C_SCL, 400000); // 1000000 400000
+BQ27220 bq27220(I2C_SDA, I2C_SCL, 100000);
 BQ27220::BQ27220_TypeDef data;
 SensorPCF85063 rtc;
-SensorBHI260AP bhy;
+SensorBHI260AP bhy(Wire, I2C_SDA, I2C_SCL, BHI260AP_SLAVE_ADDRESS_L);
 LilyGo_Button btn1;
 LilyGo_Button btn2;
 LilyGo_Button btn3;
@@ -61,8 +64,8 @@ const char *AP_SSID = "Display-Bar Config";
 const char *AP_PASSWORD = "";
 
 // 存储WiFi凭证的键名
-const char *SSID_KEY = "";
-const char *PASS_KEY = "";
+const char *SSID_KEY = "ssid";
+const char *PASS_KEY = "password";
 
 /***********Weather Server************/
 const char *apiKey = "9f2e62fde46bd3b34d30f1b7db930df9"; // your api key
@@ -101,6 +104,7 @@ void setup()
 {
   Serial.begin(115200);
   model_init();
+  lvgl_drv_init();
   enter_ui();
   sycn_init();
 }
@@ -154,10 +158,6 @@ void loop()
     static float filtered_dx = 0, filtered_dy = 0;
     filtered_dx = 0.3 * filtered_dx + 0.7 * (delta_yaw * -sensitivity);
     filtered_dy = 0.3 * filtered_dy + 0.7 * (delta_pitch * -sensitivity);
-
-    // // 转换为光标位移（限制最大速度）
-    // dx = constrain((int)(delta_yaw * -sensitivity), -127, 127);
-    // dy = constrain((int)(delta_pitch * -sensitivity), -127, 127);
 
     // 转换为光标位移（限制最大速度）
     dx = constrain((int)filtered_dx, -127, 127);
@@ -221,11 +221,21 @@ void loop()
 
   if (millis() - power_check_time > 3000)
   {
-    bq27220.read_registers(data);
+    bq27220.read_vlotage(data);
+    bq27220.state_of_charge(data);
+    bq27220.read_temp(data);
+    bq27220.current(data);
+
     power_info.VBattVoltage = data.voltReg; // 电池电压
-    power_info.Percentage = constrain((uint8_t)(((power_info.VBattVoltage - 3364.0) / (4208.0 - 3364.0)) * 100), 0, 100);
+    power_info.Percentage = data.socReg;    // 电池剩余容量百分比
+    power_info.BatteryTemp = (uint8_t)(data.tempReg * 0.1 - 273.15);
+    power_info.ChargeCurrent = data.currentReg;
+
     // Serial.printf("VBattVoltage:%d \n", power_info.VBattVoltage);
     // Serial.printf("Percentage:%.2f \n", power_info.Percentage);
+    // Serial.printf("BatteryTemp:%d C\n", power_info.BatteryTemp);
+    // Serial.printf("ChargeCurrent:%.2f \n", power_info.ChargeCurrent);
+
     if (PPM.getVbusVoltage() > 2800)
     {
       if (!PPM.isEnableCharge())
@@ -266,19 +276,19 @@ void loop()
 void perference_init()
 {
   // 初始化存储系统
-  preferences.begin("wifi-config", false);
+  preferences.begin("wifi_config", false);
 
   // 尝试读取已保存的WiFi配置
   String savedSSID = preferences.getString(SSID_KEY, "");
   String savedPASS = preferences.getString(PASS_KEY, "");
 
-  if(savedSSID == "")
+  Serial.printf("Saved SSID:%s, PASS:%s\n", savedSSID.c_str(), savedPASS.c_str());
+
+  if (savedSSID == "")
   {
     savedSSID = WIFI_SSID;
     savedPASS = WIFI_PASSWORD;
   }
-
-  Serial.printf("Saved SSID:%s, PASS:%s\n", savedSSID.c_str(), savedPASS.c_str());
 
   if (savedSSID != "")
   {
@@ -298,13 +308,16 @@ void perference_init()
 
     if (WiFi.status() == WL_CONNECTED)
     {
+      WiFi.onEvent(WiFiEvent);
       Serial.println("\nConnected successfully!");
       Serial.print("IP address: ");
       Serial.println(WiFi.localIP());
       return; // 连接成功，跳过AP模式
     }
-  }  
+  }
   setupAPMode();
+  delay(2000);
+  wifi_ap_init();
 }
 
 void setupAPMode()
@@ -443,6 +456,8 @@ void handleConfigure()
 {
   String newSSID = server.arg("ssid");
   String newPASS = server.arg("password");
+  Serial.printf("Received SSID: %s\n", newSSID.c_str());
+  Serial.printf("Received Password: %s\n", newPASS.c_str());
 
   if (newSSID.length() == 0)
   {
@@ -509,12 +524,12 @@ void blehidTask(void *pvParameters)
 void wifiTask(void *pvParameters)
 {
   perference_init();
-
   while (1)
   {
     server.handleClient(); // 处理Web请求
     if (WiFi.status() == WL_CONNECTED)
     {
+      // configTzTime(CFG_TIME_ZONE, NTP_SERVER1, NTP_SERVER2); // 设置时区和NTP服务器
       wifi_on = true;
       wifi_connect_status = true;
       get_weather(cityname, apiKey);
@@ -556,18 +571,8 @@ void adjustOrientation(float &x, float &y)
 
 void model_init()
 {
-  tft.init();
-  tft.setRotation(SCREEN_ROTATION);
-  tft.fillScreen(TFT_WHITE);
-
-  lvgl_init();
-
-  pinMode(GPIO_NUM_0, INPUT_PULLUP);             // 配置按键引脚
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_0, LOW); // 设置按键为唤醒源（低电平唤醒）
-
   /*********BHI260AP**********/
-#ifdef BHY2_USE_I2C
-  // Using I2C interface
+  Wire.setClock(10000000);
   bhy.setPins(BHI260AP_RST, BHI260AP_IRQ);
   if (!bhy.init(Wire, I2C_SDA, I2C_SCL, BHI260AP_SLAVE_ADDRESS_L))
   {
@@ -579,10 +584,15 @@ void model_init()
     }
   }
   // bhy.printSensors(Serial);
-#endif
+
   Serial.println("Init BHI260AP Sensor success!");
-  delay(10);
+  delay(5);
   bhi260_config();
+
+  /*********TFT**********/
+  tft.init();
+  tft.setRotation(SCREEN_ROTATION);
+  tft.fillScreen(TFT_BLACK);
 
   /*********TOUCH**********/
   pinMode(TOUCH_RST, OUTPUT);
@@ -600,25 +610,22 @@ void model_init()
   touch.setCenterButtonCoordinate(TFT_HOME_BTN_X, TFT_HOME_BTN_Y);
   touch.setHomeButtonCallback([](void *user_data)
                               { 
-                                home_count++;
-                                // Serial.printf("home_count:%d" + home_count); 
-                                if (home_count > 15)
-                                {
-                                  home_count = 0;
-                                  src_load_page = 0;
-                                  lv_scr_load_anim(ui.screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 150, 0, false);
-                                } }, NULL);
+                              home_count++;
+                              // Serial.printf("home_count:%d" + home_count); 
+                              if (home_count > 15)
+                              {
+                                home_count = 0;
+                                src_load_page = 0;
+                                lv_scr_load_anim(ui.screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 150, 0, false);
+                              } }, NULL);
 
-  /*********PCF8563**********/
+  /*********RTC**********/
   if (!rtc.begin(Wire, PCF85063_SLAVE_ADDRESS, I2C_SDA, I2C_SCL))
   {
     Serial.println("Failed to find PCF8563 - check your wiring!");
-    while (1)
-    {
-      delay(1000);
-    }
   }
   Serial.println("Init RTC PCF8563 success!");
+
   rtc.getDateTime(&timeinfo);
   web_data.time.year = timeinfo.tm_year + 1900;
   web_data.time.month = timeinfo.tm_mon + 1;
@@ -630,15 +637,7 @@ void model_init()
   Serial.printf("%d-%d-%d %d:%d:%d %s\n", web_data.time.year, web_data.time.month, web_data.time.day,
                 web_data.time.hour, web_data.time.minute, web_data.time.second, web_data.time.week[timeinfo.tm_wday]);
 
-  SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
-  if (!SD.begin(SD_CS, SPI, 40000000))
-  {
-    Serial.println("SD card initialization failed!");
-  }
-  else
-    Serial.println("Init SD card success!");
-
-  /*********PPM**********/
+  /*********Power Management**********/
   bool result = PPM.init(Wire, I2C_SDA, I2C_SCL, BQ25896_SLAVE_ADDRESS);
   if (result == false)
   {
@@ -667,8 +666,8 @@ void model_init()
     Serial.println("USB not connected, charging disabled.");
   }
 
-  /**********BQ27220************/
-  bq27220.unseal(data);
+  /**********Current sensing************/
+  Wire.setClock(100000);
   delay(5);
   uint32_t devID = bq27220.get_dev_id(data);
   if (devID != 0)
@@ -679,6 +678,21 @@ void model_init()
   {
     Serial.println("Not find BQ27220 Device!");
   }
+  // bq27220.read_registers(data);
+  bq27220.read_vlotage(data);
+  bq27220.state_of_charge(data);
+  bq27220.read_temp(data);
+  bq27220.current(data);
+
+  power_info.VBattVoltage = data.voltReg; // 电池电压
+  power_info.Percentage = data.socReg;    // 电池剩余容量百分比
+  power_info.BatteryTemp = (uint8_t)(data.tempReg * 0.1 - 273.15);
+  power_info.ChargeCurrent = data.currentReg;
+
+  Serial.printf("VBattVoltage:%d \n", power_info.VBattVoltage);
+  Serial.printf("Percentage:%.2f \n", power_info.Percentage);
+  Serial.printf("BatteryTemp:%d °C\n", power_info.BatteryTemp);
+  Serial.printf("ChargeCurrent:%.2f \n", power_info.ChargeCurrent);
 
   /*********Button**********/
   btn1.init(Button1, 50, nullptr);
@@ -691,33 +705,35 @@ void model_init()
 
   // /*********BUZZER**********/
   pinMode(BUZZER_PIN, OUTPUT);
-  tone(BUZZER_PIN, 1000); // 发出1000Hz的音调
+  // tone(BUZZER_PIN, 1000); // 发出1000Hz的音调
   delay(300);
   noTone(BUZZER_PIN); // 停止发声
 
-  // power_info.VBattVoltage = PPM.getBattVoltage(); // 电池电压
-  bq27220.read_registers(data);
-  power_info.VBattVoltage = data.voltReg; // 电池电压
-  power_info.ChargeCurrent = data.currentReg;
-  power_info.Percentage = constrain((uint8_t)(((power_info.VBattVoltage - 3364.0) / (4208.0 - 3364.0)) * 100), 0, 100);
-  Serial.printf("VBattVoltage:%d \n", power_info.VBattVoltage);
-  Serial.printf("Percentage:%.2f \n", power_info.Percentage);
-  Serial.printf("ChargeCurrent:%.2f \n", power_info.ChargeCurrent);
+  // /*********SD CARD**********/
+  SDSPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
+  if (!SD.begin(SD_CS, SDSPI))
+  {
+    Serial.println("SD card initialization failed!");
+  }
+  else
+  {
+    Serial.print("SD initialization done.");
+    Serial.print(SD.cardSize() / 1024 / 1024.0);
+    Serial.println("MB");
+  }
 }
 
-void lvgl_init()
+void lvgl_drv_init()
 {
   lv_init();
 
-  lv_disp_draw_buf_init(&draw_buf, buf1, buf2, BUFFER_SIZE);
-  /*Initialize the display*/
+  lv_disp_draw_buf_init(&draw_buf, buf1, NULL, BUFFER_SIZE);
+
   static lv_disp_drv_t disp_drv;
   lv_disp_drv_init(&disp_drv);
   /*Change the following line to your display resolution*/
   disp_drv.hor_res = LV_SCREEN_WIDTH;
-  disp_drv.ver_res = LV_SCREEN_HEIGHT + LV_SCREEN_COMPENSATION; // TFT only Support:RGB888   LVGL only Support:RGB565
-  disp_drv.offset_x = 0;
-  disp_drv.offset_y = -LV_SCREEN_COMPENSATION;
+  disp_drv.ver_res = LV_SCREEN_HEIGHT; // TFT only Support:RGB888   LVGL only Support:RGB565
   disp_drv.flush_cb = my_disp_flush;
   disp_drv.draw_buf = &draw_buf;
   lv_disp_drv_register(&disp_drv);
@@ -771,9 +787,6 @@ void Button1_Callback(ButtonState event) // TFT_Backlight
       digitalWrite(TFT_BL, !TFT_BACKLIGHT_ON);
     }
     break;
-  case BTN_LONG_PRESSED_EVENT:
-    Serial.println("deep sleep...");
-    PPM.shutdown();
   default:
     break;
   }
@@ -794,14 +807,14 @@ void Button2_Callback(ButtonState event) // air mouse move  BTN39
     break;
   case BTN_DOUBLE_CLICK_EVENT:
     Serial.println("BTN_39_DOUBLE_CLICK_EVENT");
-    move_mouse = 1;
+    move_mouse = true;
+    Serial.printf("move_mouse: %d\n", move_mouse);
     if (!bleMouse.isConnected())
     {
       bleMouse.begin();
     }
     break;
 
-    break;
   default:
     break;
   }
@@ -943,6 +956,7 @@ void my_disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *c
 {
   uint32_t w = (area->x2 - area->x1 + 1);
   uint32_t h = (area->y2 - area->y1 + 1);
+  // Serial.printf("my_disp_flush %d %d %d %d\n", w, h, area->x1, area->y1);
 
   tft.startWrite();
   tft.setAddrWindow(area->x1, area->y1, w, h);

@@ -1,6 +1,7 @@
 // ST7796 222 x 480 display with no chip select line
 #define USER_SETUP_ID 214
 // #define SPI_18BIT_DRIVER
+// #define ESP32_DMA 1
 
 #define ST7789_DRIVER // Configure all registers
 
@@ -31,8 +32,8 @@
 
 #define SMOOTH_FONT
 
-#define SPI_FREQUENCY  80000000
-// #define SPI_FREQUENCY 40000000
+// #define SPI_FREQUENCY  80000000
+#define SPI_FREQUENCY 40000000
 
 #define SPI_READ_FREQUENCY 20000000
 

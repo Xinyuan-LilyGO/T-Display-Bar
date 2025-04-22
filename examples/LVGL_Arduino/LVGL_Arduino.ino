@@ -14,9 +14,10 @@ static const uint16_t screenWidth  = 284;
 static const uint16_t screenHeight = 76;
 
 static lv_disp_draw_buf_t draw_buf;
-static lv_color_t buf[ screenWidth * screenHeight / 10 ];
+// static lv_color_t buf[ screenWidth * screenHeight / 10 ];
+static lv_color_t buf[ screenWidth * screenHeight ];
 
-TFT_eSPI tft = TFT_eSPI(screenWidth, screenHeight); /* TFT instance */
+TFT_eSPI tft = TFT_eSPI(screenHeight, screenWidth); /* TFT instance */
 
 #if LV_USE_LOG != 0
 /* Serial debugging */
@@ -32,6 +33,7 @@ void my_disp_flush( lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *
 {
     uint32_t w = ( area->x2 - area->x1 + 1 );
     uint32_t h = ( area->y2 - area->y1 + 1 );
+    Serial.printf("my_disp_flush %d %d %d %d\n", w, h, area->x1, area->y1);
 
     tft.startWrite();
     tft.setAddrWindow( area->x1, area->y1, w, h );
@@ -85,7 +87,8 @@ void setup()
 #endif
 
     tft.begin();          /* TFT init */
-    tft.setRotation( 3 ); /* Landscape orientation, flipped */
+    tft.setRotation( 1 ); /* Landscape orientation, flipped */
+    tft.fillScreen(TFT_WHITE);
 
     /*Set the touchscreen calibration data,
      the actual data for your display can be acquired using
@@ -93,7 +96,7 @@ void setup()
     uint16_t calData[5] = { 275, 3620, 264, 3532, 1 };
     // tft.setTouch( calData );
 
-    lv_disp_draw_buf_init( &draw_buf, buf, NULL, screenWidth * screenHeight / 10 );
+    lv_disp_draw_buf_init( &draw_buf, buf, NULL, screenWidth * screenHeight );
 
     /*Initialize the display*/
     static lv_disp_drv_t disp_drv;
@@ -105,14 +108,18 @@ void setup()
     disp_drv.draw_buf = &draw_buf;
     lv_disp_drv_register( &disp_drv );
 
-    // /*Initialize the (dummy) input device driver*/
+    /*Initialize the (dummy) input device driver*/
     // static lv_indev_drv_t indev_drv;
     // lv_indev_drv_init( &indev_drv );
     // indev_drv.type = LV_INDEV_TYPE_POINTER;
     // indev_drv.read_cb = my_touchpad_read;
     // lv_indev_drv_register( &indev_drv );
   
+    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x000000), 0);
+    lv_obj_set_style_text_color(lv_scr_act(), lv_color_hex(0xFFFFFF), 0);
     /* Create simple label */
+    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x00FF00), 0);
+
     lv_obj_t *label = lv_label_create( lv_scr_act() );
     lv_label_set_text( label, "Hello Ardino and LVGL!");
     lv_obj_align( label, LV_ALIGN_CENTER, 0, 0 );

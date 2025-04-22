@@ -82,6 +82,21 @@
         "stdlib.h": "c",
         "xpowerslib_version.h": "c",
         "glcdfont.c": "cpp",
-        "lv_gpu_nxp_pxp.h": "c"
+        "lv_gpu_nxp_pxp.h": "c",
+        "pio_8bit_parallel.pio.h": "c",
+        "pio_spi.pio.h": "c",
+        "touchdrvcstxxx.hpp": "c",
+        "lv_async.h": "c",
+        "lv_assert.h": "c",
+        "lv_draw_sdl.h": "c",
+        "lv_theme.h": "c",
+        "lv_mem.h": "c",
+        "lv_hal_tick.h": "c",
+        "tft_espi_esp32_s3.c": "cpp",
+        "lv_conf_internal.h": "c",
+        "lv_examples.h": "c",
+        "lv_anim.h": "c",
+        "lv_font.h": "c",
+        "lv_layouts.h": "c"
     }
 }

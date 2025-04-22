@@ -22,9 +22,9 @@
   writedata(0x00);
   writedata(0xE0);
   //------------------------------display and color format setting--------------------------------//
-  writecommand(ST7789_COLMOD);
-  writedata(0x55); //0x55  // 16bit RGB 565
-  delay(10);
+  // writecommand(ST7789_COLMOD);
+  // writedata(0x55); //0x55  // 16bit RGB 565
+  // delay(10);
 
   writecommand(ST7789_MADCTL);
   writedata(0x00);
