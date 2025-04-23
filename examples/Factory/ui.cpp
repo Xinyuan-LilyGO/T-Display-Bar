@@ -42,10 +42,10 @@ struct APP_ICON_INFO
 
 #define APP_ICON_NUM 4
 APP_ICON_INFO app_icon_info[APP_ICON_NUM] = {
-    {.app_btn = ui.screen_btn_weather, .app_label = ui.screen_btn_weather_label, .btn_img = _weather_alpha_30x30, .btn_img_obj = ui.screen_img_weather, .x_pos = 8, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_weather_event_handler, .app_id = 0},
-    {.app_btn = ui.screen_btn_mouse, .app_label = ui.screen_btn_mouse_label, .btn_img = _mouse_alpha_30x30, .btn_img_obj = ui.screen_img_mouse, .x_pos = 78, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_mouse_event_handler, .app_id = 1},
-    {.app_btn = ui.screen_btn_set, .app_label = ui.screen_btn_set_label, .btn_img = _shezhi_alpha_30x30, .btn_img_obj = ui.screen_img_set, .x_pos = 148, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_set_event_handler, .app_id = 2},
-    {.app_btn = ui.screen_btn_shotdown, .app_label = ui.screen_btn_shotdown_label, .btn_img = _shutdown_alpha_30x30, .btn_img_obj = ui.screen_img_shotdown, .x_pos = 218, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_shutdown_event_handler, .app_id = 3},
+    {.app_btn = ui.screen_btn_weather, .app_label = ui.screen_btn_weather_label, .btn_img = _weather_alpha_30x30, .btn_img_obj = ui.screen_img_weather, .x_pos = 10, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_weather_event_handler, .app_id = 0},
+    {.app_btn = ui.screen_btn_mouse, .app_label = ui.screen_btn_mouse_label, .btn_img = _mouse_alpha_30x30, .btn_img_obj = ui.screen_img_mouse, .x_pos = 80, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_mouse_event_handler, .app_id = 1},
+    {.app_btn = ui.screen_btn_set, .app_label = ui.screen_btn_set_label, .btn_img = _shezhi_alpha_30x30, .btn_img_obj = ui.screen_img_set, .x_pos = 150, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_set_event_handler, .app_id = 2},
+    {.app_btn = ui.screen_btn_shotdown, .app_label = ui.screen_btn_shotdown_label, .btn_img = _shutdown_alpha_30x30, .btn_img_obj = ui.screen_img_shotdown, .x_pos = 220, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_shutdown_event_handler, .app_id = 3},
 };
 
 void init_style(void)
@@ -127,9 +127,9 @@ void ui_main_init(lv_ui *ui)
     lv_obj_set_pos(ui->screen_main, 0, 0);
     lv_obj_set_size(ui->screen_main, LV_SCREEN_WIDTH, LV_SCREEN_HEIGHT);
     lv_obj_set_scrollbar_mode(ui->screen_main, LV_SCROLLBAR_MODE_OFF);
-    lv_obj_set_style_bg_color(ui->screen_main, lv_color_hex(0xe2cc09), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui->screen_main, lv_color_hex(0x413b75), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(ui->screen_main, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_grad_color(ui->screen_main, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_color(ui->screen_main, lv_color_hex(0x6e004d), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_main_stop(ui->screen_main, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_stop(ui->screen_main, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
@@ -151,7 +151,7 @@ void ui_main_init(lv_ui *ui)
     lv_obj_set_style_bg_opa(ui->screen_label_time, LV_OPA_0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(ui->screen_label_time, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(ui->screen_label_time, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(ui->screen_label_time, &lv_font_OswaldVariableFont_wght_22, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui->screen_label_time, &lv_font_Acme_Regular_22, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_add_style(ui->screen_label_time, &label_style, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(ui->screen_label_time, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_color(ui->screen_label_time, lv_color_white(), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -259,24 +259,58 @@ void ui_main_init(lv_ui *ui)
     lv_obj_set_pos(ui->screen_label_app_bg, 66, 3);
     lv_obj_set_size(ui->screen_label_app_bg, 214, 70);
     lv_obj_set_style_border_width(ui->screen_label_app_bg, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_label_app_bg, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_label_app_bg, 35, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui->screen_label_app_bg, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(ui->screen_label_app_bg, lv_color_hex(0x7b009c), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui->screen_label_app_bg, lv_color_hex(0x00ffee), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(ui->screen_label_app_bg, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_grad_color(ui->screen_label_app_bg, lv_color_hex(0x01dec3), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_color(ui->screen_label_app_bg, lv_color_hex(0xd000ff), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_main_stop(ui->screen_label_app_bg, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_stop(ui->screen_label_app_bg, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    ui->screen_label_app_bg3 = lv_label_create(ui->screen_main);
+    lv_label_set_text(ui->screen_label_app_bg3, "");
+    lv_label_set_long_mode(ui->screen_label_app_bg3, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_label_app_bg3, 204, 3);
+    lv_obj_set_size(ui->screen_label_app_bg3, 80, 70);
+    lv_obj_set_style_border_width(ui->screen_label_app_bg3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_label_app_bg3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_label_app_bg3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui->screen_label_app_bg3, lv_color_hex(0x00ffee), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_dir(ui->screen_label_app_bg3, LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_color(ui->screen_label_app_bg3, lv_color_hex(0xd000ff), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_main_stop(ui->screen_label_app_bg3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_stop(ui->screen_label_app_bg3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui->screen_label_app_bg4 = lv_label_create(ui->screen_main);
+    lv_label_set_text(ui->screen_label_app_bg4, "");
+    lv_label_set_long_mode(ui->screen_label_app_bg4, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_label_app_bg4, 72, 7);
+    lv_obj_set_size(ui->screen_label_app_bg4, 80, 62);
+    lv_obj_set_style_border_width(ui->screen_label_app_bg4, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_label_app_bg4, 31, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_label_app_bg4, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui->screen_label_app_bg4, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui->screen_label_app_bg2 = lv_label_create(ui->screen_main);
+    lv_label_set_text(ui->screen_label_app_bg2, "");
+    lv_label_set_long_mode(ui->screen_label_app_bg2, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(ui->screen_label_app_bg2, 204, 7);
+    lv_obj_set_size(ui->screen_label_app_bg2, 80, 62);
+    lv_obj_set_style_border_width(ui->screen_label_app_bg2, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_label_app_bg2, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_label_app_bg2, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui->screen_label_app_bg2, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+
     // Write codes screen_mian_cont_app
     ui->screen_cont_app = lv_obj_create(ui->screen_main);
-    lv_obj_set_pos(ui->screen_cont_app, 70, 7);
-    lv_obj_set_size(ui->screen_cont_app, 206, 64);
+    lv_obj_set_pos(ui->screen_cont_app, 80,7);
+    lv_obj_set_size(ui->screen_cont_app, 204, 62);
     lv_obj_set_scrollbar_mode(ui->screen_cont_app, LV_SCROLLBAR_MODE_OFF);
 
     // Write style for screen_cont_app, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
     lv_obj_set_style_border_width(ui->screen_cont_app, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(ui->screen_cont_app, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(ui->screen_cont_app, LV_OPA_60, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui->screen_cont_app, 30, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui->screen_cont_app, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(ui->screen_cont_app, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(ui->screen_cont_app, LV_GRAD_DIR_NONE, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_top(ui->screen_cont_app, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -300,11 +334,11 @@ void ui_main_init(lv_ui *ui)
         lv_obj_set_pos(app_icon_info[i].app_btn, app_icon_info[i].x_pos, app_icon_info[i].y_pos);
         lv_obj_set_size(app_icon_info[i].app_btn, app_icon_info[i].width, app_icon_info[i].height);
         lv_obj_set_style_bg_opa(app_icon_info[i].app_btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_border_width(app_icon_info[i].app_btn, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_border_opa(app_icon_info[i].app_btn, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_border_color(app_icon_info[i].app_btn, lv_color_hex(0xe2cc09), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_width(app_icon_info[i].app_btn, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_opa(app_icon_info[i].app_btn, LV_OPA_80, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_color(app_icon_info[i].app_btn, lv_color_hex(0xf9f9f9), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_border_side(app_icon_info[i].app_btn, LV_BORDER_SIDE_FULL, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_radius(app_icon_info[i].app_btn, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_radius(app_icon_info[i].app_btn, 50, LV_PART_MAIN | LV_STATE_DEFAULT);
 
         lv_obj_add_event_cb(app_icon_info[i].app_btn, app_icon_info[i].event_cb, LV_EVENT_ALL, NULL);
     }

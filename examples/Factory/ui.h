@@ -60,6 +60,9 @@ Here is the touch configuration with rotation 1*/
 		lv_obj_t *screen_img_ble_icon;
 		lv_obj_t *screen_cont_app;
 		lv_obj_t *screen_label_app_bg;
+		lv_obj_t *screen_label_app_bg2;
+		lv_obj_t *screen_label_app_bg3;
+		lv_obj_t *screen_label_app_bg4;
 		lv_obj_t *screen_btn_weather;
 		lv_obj_t *screen_btn_weather_label;
 		lv_obj_t *screen_btn_mouse;
@@ -201,8 +204,6 @@ Here is the touch configuration with rotation 1*/
 	LV_FONT_DECLARE(lv_font_Adventpro_regular_10);
 	LV_FONT_DECLARE(lv_font_Adventpro_regular_12);
 	LV_FONT_DECLARE(lv_font_Alatsi_Regular_12);
-	LV_FONT_DECLARE(lv_font_Acme_Regular_8);
-	LV_FONT_DECLARE(lv_font_Acme_Regular_14);
 	LV_FONT_DECLARE(lv_font_Orbitron_VariableFont_wght_14);
 	LV_FONT_DECLARE(lv_font_OrbitronSemiBold_16);
 	LV_FONT_DECLARE(lv_font_OrbitronBlack_12);
@@ -215,6 +216,11 @@ Here is the touch configuration with rotation 1*/
 	LV_FONT_DECLARE(lv_font_SourceHanSerifSC_Regular_16);
 	LV_FONT_DECLARE(lv_font_TrainOneRegular_40);
 	LV_FONT_DECLARE(lv_font_OswaldVariableFont_wght_22);
+	LV_FONT_DECLARE(lv_font_Acme_Regular_8);
+	LV_FONT_DECLARE(lv_font_Acme_Regular_10);
+	LV_FONT_DECLARE(lv_font_Acme_Regular_12);
+	LV_FONT_DECLARE(lv_font_Acme_Regular_14);
+	LV_FONT_DECLARE(lv_font_Acme_Regular_22);
 
 	void enter_ui(void);
 	void wifi_ap_init();
