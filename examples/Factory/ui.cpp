@@ -709,7 +709,7 @@ void ui_about_init(lv_ui *ui)
     ui->screen_about_label_current = lv_label_create(ui->screen_about_cont_about);
     about_info_label(ui->screen_about_label_current, "Current: 0mA", pos_x, pos_y + 20 * 8);
     ui->screen_about_label_batterytemp = lv_label_create(ui->screen_about_cont_about);
-    about_info_label(ui->screen_about_label_batterytemp, "Battery Temp: 0;&#176C", pos_x, pos_y + 20 * 9);
+    about_info_label(ui->screen_about_label_batterytemp, "Battery Temp: 0C", pos_x, pos_y + 20 * 9);
 }
 
 void about_info_label(lv_obj_t *param, String info, int x, int y)
@@ -727,13 +727,23 @@ void about_info_label(lv_obj_t *param, String info, int x, int y)
     lv_obj_set_style_text_opa(param, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_letter_space(param, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_line_space(param, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(param, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(param, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(param, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_top(param, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_right(param, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(param, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(param, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(param, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t* line = lv_obj_create(ui.screen_about_cont_about);
+    lv_obj_set_pos(line, 2, y + 15);
+    lv_obj_set_size(line, 280 , 1);
+    lv_obj_set_style_bg_color(line, lv_color_hex(0xebff00), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_dir(line,LV_GRAD_DIR_VER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_color(line, lv_color_hex(0x00dfff), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(line, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(line, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
 }
 
 void ui_timer_cb(lv_timer_t *timer)
@@ -767,7 +777,7 @@ void ui_timer_cb(lv_timer_t *timer)
         }
         lv_obj_set_size(ui.screen_cont_bettery2, ((uint8_t)power_info.Percentage * 28 / 100), 10);
 
-        if (power_info.Percentage <= 20)
+        if (power_info.Percentage <= 15)
         {
             lv_obj_set_style_bg_color(ui.screen_cont_bettery2, lv_color_hex(0xff0000), LV_PART_MAIN | LV_STATE_DEFAULT);
         }
@@ -888,7 +898,7 @@ void ui_timer_cb(lv_timer_t *timer)
         {
             lv_label_set_text_fmt(ui.screen_about_label_wifirssi, "WiFi Rssi: %ddBm", power_info.Rssi);
             lv_label_set_text_fmt(ui.screen_about_label_vbatt, "VBatt: %04dmV", power_info.VBattVoltage);
-            lv_label_set_text_fmt(ui.screen_about_label_Battery_level, "Battery: %.2f%%", power_info.Percentage);
+            lv_label_set_text_fmt(ui.screen_about_label_Battery_level, "Battery: %d%%", power_info.Percentage);
             lv_label_set_text_fmt(ui.screen_about_label_vbus, "VBus: %04dmV", power_info.VBusVoltage);
             lv_label_set_text_fmt(ui.screen_about_label_vsys, "VSys: %04dmV", power_info.VSysVoltage);
             lv_label_set_text_fmt(ui.screen_about_label_vtarget, "VTarget: %04dmV", power_info.ChargeTargetVoltage);

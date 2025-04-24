@@ -170,7 +170,7 @@ Here is the touch configuration with rotation 1*/
 	typedef struct
 	{
 		int8_t Rssi = 0;
-		float Percentage = 0;
+		uint8_t Percentage = 0;
 		uint16_t VBusVoltage = 0;
 		uint16_t VBattVoltage = 0;
 		uint16_t VSysVoltage = 0;

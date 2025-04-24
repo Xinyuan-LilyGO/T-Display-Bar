@@ -22,6 +22,7 @@ void Openinganimation();
 void time_sync_notification_handler(timeval *t);
 void get_weather(const String &city, const String &apiKey);
 static void WiFiEvent(WiFiEvent_t event);
+uint8_t voltage_percentage_calculation(uint16_t VBattVoltage);
 void my_disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p);
 void my_touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
 static void accel_process_callback(uint8_t sensor_id, uint8_t *data_ptr, uint32_t len);
@@ -227,14 +228,16 @@ void loop()
     bq27220.current(data);
 
     power_info.VBattVoltage = data.voltReg; // 电池电压
-    power_info.Percentage = data.socReg;    // 电池剩余容量百分比
+    power_info.Percentage = voltage_percentage_calculation(power_info.VBattVoltage);
     power_info.BatteryTemp = (uint8_t)(data.tempReg * 0.1 - 273.15);
     power_info.ChargeCurrent = data.currentReg;
 
     // Serial.printf("VBattVoltage:%d \n", power_info.VBattVoltage);
+    // Serial.printf("ChargeTargetVoltage:%d \n", power_info.ChargeTargetVoltage);
     // Serial.printf("Percentage:%.2f \n", power_info.Percentage);
     // Serial.printf("BatteryTemp:%d C\n", power_info.BatteryTemp);
     // Serial.printf("ChargeCurrent:%.2f \n", power_info.ChargeCurrent);
+    // Serial.printf("%s\n", power_info.ChargeStatus);
 
     if (PPM.getVbusVoltage() > 2800)
     {
@@ -650,10 +653,13 @@ void model_init()
   else
     Serial.println("Init PPM success!");
 
-  PPM.setSysPowerDownVoltage(3300);
+  PPM.setSysPowerDownVoltage(3200);
   PPM.setChargeTargetVoltage(4208); // 3364mv
   PPM.setPrechargeCurr(64);
   PPM.setChargerConstantCurr(1024);
+
+  power_info.ChargeTargetVoltage = PPM.getChargeTargetVoltage(); // 充电目标电压
+  power_info.VSysVoltage = PPM.getSystemVoltage();               // 系统电压
 
   if (PPM.getVbusVoltage() > 2800)
   {
@@ -665,6 +671,7 @@ void model_init()
     PPM.disableCharge();
     Serial.println("USB not connected, charging disabled.");
   }
+  power_info.ChargeStatus = PPM.getChargeStatusString(); // 充电状态
 
   /**********Current sensing************/
   Wire.setClock(100000);
@@ -680,18 +687,17 @@ void model_init()
   }
   // bq27220.read_registers(data);
   bq27220.read_vlotage(data);
-  bq27220.state_of_charge(data);
   bq27220.read_temp(data);
   bq27220.current(data);
 
   power_info.VBattVoltage = data.voltReg; // 电池电压
-  power_info.Percentage = data.socReg;    // 电池剩余容量百分比
+  power_info.Percentage = voltage_percentage_calculation(power_info.VBattVoltage);
   power_info.BatteryTemp = (uint8_t)(data.tempReg * 0.1 - 273.15);
   power_info.ChargeCurrent = data.currentReg;
 
   Serial.printf("VBattVoltage:%d \n", power_info.VBattVoltage);
-  Serial.printf("Percentage:%.2f \n", power_info.Percentage);
-  Serial.printf("BatteryTemp:%d °C\n", power_info.BatteryTemp);
+  Serial.printf("Percentage:%d%% \n", power_info.Percentage);
+  Serial.printf("BatteryTemp:%d C\n", power_info.BatteryTemp);
   Serial.printf("ChargeCurrent:%.2f \n", power_info.ChargeCurrent);
 
   /*********Button**********/
@@ -705,7 +711,7 @@ void model_init()
 
   // /*********BUZZER**********/
   pinMode(BUZZER_PIN, OUTPUT);
-  // tone(BUZZER_PIN, 1000); // 发出1000Hz的音调
+  tone(BUZZER_PIN, 800); // 发出1000Hz的音调
   delay(300);
   noTone(BUZZER_PIN); // 停止发声
 
@@ -950,6 +956,34 @@ static void WiFiEvent(WiFiEvent_t event)
   default:
     break;
   }
+}
+
+uint8_t voltage_percentage_calculation(uint16_t VBattVoltage)
+{
+  /* | 电压区间 (V) | 对应电量 (%) | 区间特性 |
+  |--------------|--------------|------------------------|
+  | 4.2 ~ 3.9 | 100% ~ 80% | 电压快速下降（高电量区）|
+  | 3.9 ~ 3.7 | 80% ~ 40%  | 电压平缓（中电量区） |
+  | 3.7 ~ 3.4 | 40% ~ 10%  | 电压缓慢下降 |
+  | 3.4 ~ 3.0 | 10% ~ 0%   | 电压快速下降（低电量区）|*/
+  uint8_t Percentage = 0;
+  if (VBattVoltage <= 4208 && VBattVoltage > 3900)
+  {
+    Percentage = 100 - (4200 - VBattVoltage) / 300.0 * 20;
+  }
+  else if (VBattVoltage <= 3900 && VBattVoltage > 3700)
+  {
+    Percentage = 80 - (3900 - VBattVoltage) / 200.0 * 40;
+  }
+  else if (VBattVoltage <= 3700 && VBattVoltage > 3400)
+  {
+    Percentage = 40 - (3700 - VBattVoltage) / 300.0 * 30;
+  }
+  else if (VBattVoltage <= 3400 && VBattVoltage > 3000)
+  {
+    Percentage = 10 - (3400 - VBattVoltage) / 400.0 * 10;
+  }
+  return Percentage;
 }
 
 void my_disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p)
