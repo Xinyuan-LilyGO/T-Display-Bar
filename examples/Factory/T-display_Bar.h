@@ -15,10 +15,6 @@
 #include "lvgl.h"
 #include "bq27220.h"
 
-/*****define******/
-#define WIFI_SSID "xinyuandianzi"
-#define WIFI_PASSWORD "AA15994823428"
-
 /***********Weather Server************/
 #define WEATHER_UPDATE_TIME 1
 

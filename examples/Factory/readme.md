@@ -10,16 +10,11 @@ Below is the factory routine button instructions:
     RESET: 
     Reset the device
 
-    WIFI & BOOT: 
-    a. Connect to the wifi 
-    b. Hold boot and press reset to release boot and enter the firmware burning mode
+    BOOT: 
+    Hold boot and press reset to release boot and enter the firmware burning mode
     
-    BLK & SLEEP: 
-    a. CLick to ON/OFF the screen backlight
-    b. Long Press btn Enter the sleep mode
-
-    AIRMOUSE:
-    After connecting the Bluetooth, enter the Flying squirrel interface, press to start and pause the mouse
+    BLK: 
+    CLick to ON/OFF the screen backlight
 
 # 2. Usage
 ## 2.1. Desktop Weather

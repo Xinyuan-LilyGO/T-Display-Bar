@@ -11,7 +11,7 @@
 #define SPI_MISO 13
 #define SPI_SCK 14
 
-#define LDO_ENABLE 16
+#define BHI260_LDO_ENABLE 16
 
 #define SD_CS 11
 #define BUZZER_PIN 9

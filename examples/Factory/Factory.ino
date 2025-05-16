@@ -4,24 +4,18 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/timers.h>
-#include "esp_task_wdt.h"
 #include "T-display_Bar.h"
+#include "wifi_config.h"
 #include "ui.h"
-#include <WebServer.h>
-#include <Preferences.h>
 
 /*****funtion******/
-void perference_init();
-void setupAPMode();
-void handleRoot();
-void handleConfigure();
 void sycn_init();
 void model_init();
 void lvgl_drv_init();
 void Openinganimation();
 void time_sync_notification_handler(timeval *t);
 void get_weather(const String &city, const String &apiKey);
-static void WiFiEvent(WiFiEvent_t event);
+// static void WiFiEvent(WiFiEvent_t event);
 uint8_t voltage_percentage_calculation(uint16_t VBattVoltage);
 void my_disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p);
 void my_touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data);
@@ -33,8 +27,8 @@ void Button2_Callback(ButtonState event);
 void Button3_Callback(ButtonState event);
 
 /*****var******/
+/***********DISPALY************/
 #define BUFFER_SIZE (TFT_WIDTH * TFT_HEIGHT)
-
 static lv_disp_draw_buf_t draw_buf;
 static lv_color_t buf1[BUFFER_SIZE];
 static lv_color_t buf2[BUFFER_SIZE];
@@ -43,41 +37,18 @@ TouchDrvCSTXXX touch;
 int16_t x[2], y[2];
 int16_t move_X = 0;
 
+/***********External equipment************/
 SPIClass SDSPI(HSPI);
+SD_Size sd;
 XPowersPPM PPM;
-Power_info power_info;
-BQ27220 bq27220(I2C_SDA, I2C_SCL, 100000);
-BQ27220::BQ27220_TypeDef data;
+About_info about_info;
+BQ27220 bq27220;
+BQ27220BatteryStatus batt;
 SensorPCF85063 rtc;
 SensorBHI260AP bhy(Wire, I2C_SDA, I2C_SCL, BHI260AP_SLAVE_ADDRESS_L);
-LilyGo_Button btn1;
-LilyGo_Button btn2;
-LilyGo_Button btn3;
-lv_ui ui;
-uint8_t src_load_page = 0;
-
-/***********AP Mode************/
-WebServer server(80);
-Preferences preferences;
-
-// AP模式配置
-const char *AP_SSID = "Display-Bar Config";
-const char *AP_PASSWORD = "";
-
-// 存储WiFi凭证的键名
-const char *SSID_KEY = "ssid";
-const char *PASS_KEY = "password";
-
-/***********Weather Server************/
-const char *apiKey = "9f2e62fde46bd3b34d30f1b7db930df9"; // your api key
-const char *cityID = "1795565";
-const char *cityname = "Shenzhen"; // your city
-String url;
-
-extern Web_data web_data;
-uint8_t home_count = 0;
-struct tm timeinfo;
-
+LilyGo_Button btn_38;
+LilyGo_Button btn_39;
+LilyGo_Button btn_boot;
 Madgwick filter;
 float roll, pitch, yaw;
 float gyro_scaling_factor;
@@ -86,16 +57,33 @@ cbuf accel_data_buffer(1);
 cbuf gyro_data_buffer(1);
 struct bhy2_data_xyz acc;
 struct bhy2_data_xyz gyr;
+BleMouse bleMouse("Air-Mouse");
+uint8_t pwm_channel = 0;
 
+/***********AP Mode************/
+WebServer server(80);
+Preferences preferences;
+char *AP_SSID = "Display-Bar Config";
+char *AP_PASSWORD = "";
+char *SSID_KEY = "ssid";
+char *PASS_KEY = "password";
 HTTPClient http;
-bool wifi_connect_status = false;
+bool AP_MODE = false;
 
+/***********Weather Server************/
+const char *apiKey = "9f2e62fde46bd3b34d30f1b7db930df9"; // your api key
+const char *cityID = "1795565";
+const char *cityname = "Shenzhen"; // your city
+String url;
+
+/***********UI variables************/
+lv_ui ui;
+uint8_t src_load_page = 0;
+uint8_t home_count = 0;
+struct tm timeinfo;
 TaskHandle_t wifiTaskHandle = NULL;
 SemaphoreHandle_t xMutex;
-BleMouse bleMouse("Air-Mouse");
-
 int dx = 0, dy = 0;
-bool wifi_on = false;
 bool move_mouse = false;
 bool mouse_wheel = false;
 bool tft_backlight = true;
@@ -113,138 +101,24 @@ void setup()
 void loop()
 {
   static uint32_t power_check_time = 0;
-  btn1.update();
-  btn2.update();
-  btn3.update();
-  if (src_load_page == 2)
-  {
-    bhy.update();
-    gyro_data_buffer.read((char *)&gyr, sizeof(gyr));
-    accel_data_buffer.read((char *)&acc, sizeof(acc));
-    filter.updateIMU(gyr.x * gyro_scaling_factor,
-                     gyr.y * gyro_scaling_factor,
-                     gyr.z * gyro_scaling_factor,
-                     acc.x * accel_scaling_factor,
-                     acc.y * accel_scaling_factor,
-                     acc.z * accel_scaling_factor);
-    roll = filter.getRoll();
-    pitch = filter.getPitch() + 90; // 控制上下 0 <--> 180
-    yaw = filter.getYaw();          // 控制左右 0 <--> 360
-
-    // Serial.printf("%f,%f,%f\n", roll, pitch, yaw);
-
-    static float last_pitch = 0, last_yaw = 0;
-    float delta_yaw = yaw - last_yaw;
-    float delta_pitch = pitch - last_pitch;
-
-    if (delta_yaw >= 180 || delta_yaw <= -180)
-    {
-      if (delta_yaw > 0)
-        delta_yaw = delta_yaw - 360;
-      else if (delta_yaw < 0)
-        delta_yaw = delta_yaw + 360;
-    }
-
-    // Serial.printf("%f,%f\n", yaw, delta_yaw);
-
-    last_pitch = pitch;
-    last_yaw = yaw;
-
-    // 动态灵敏度调整
-    float speed_factor = sqrt(delta_pitch * delta_pitch + delta_yaw * delta_yaw);
-    // float sensitivity = map(speed_factor, 0, 5.0, 30.0, 80.0); // 慢速10px/deg, 快速50px/deg
-
-    float sensitivity = 30.0 + 50.0 * (1.0 - exp(-speed_factor * 0.4));
-    // 新增：加入IIR低通滤波（系数0.2-0.5之间调节）
-    static float filtered_dx = 0, filtered_dy = 0;
-    filtered_dx = 0.3 * filtered_dx + 0.7 * (delta_yaw * -sensitivity);
-    filtered_dy = 0.3 * filtered_dy + 0.7 * (delta_pitch * -sensitivity);
-
-    // 转换为光标位移（限制最大速度）
-    dx = constrain((int)filtered_dx, -127, 127);
-    dy = constrain((int)filtered_dy, -127, 127);
-
-    if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE)
-    {
-      // 优化死区处理（动态阈值 + 滞环控制）
-      static float last_dx = 0, last_dy = 0;
-      static int stable_counter = 0;
-
-      // 1. 动态噪声阈值（根据历史波动自动调整）
-      static float noise_threshold = 1.5;
-      noise_threshold = 0.9 * noise_threshold + 0.1 * (fabs(dx - last_dx) + fabs(dy - last_dy)) / 2;
-
-      // 2. 滞环控制（双阈值机制）
-      if (fabs(dx) < fmax(4.0, noise_threshold * 2) &&
-          fabs(dy) < fmax(4.0, noise_threshold * 2))
-      {
-        stable_counter++;
-        if (stable_counter < 5)
-        { // 持续5帧静止才归零
-          dx = 0;
-          dy = 0;
-        }
-      }
-      else
-      {
-        stable_counter = 0;
-      }
-
-      // 3. 运动状态检测（防止误触发）
-      if (stable_counter >= 5)
-      {
-        dx = 0;
-        dy = 0;
-        last_dx = 0; // 重置历史位置
-        last_dy = 0;
-      }
-      else
-      {
-        last_dx = dx;
-        last_dy = dy;
-      }
-
-      // 4. 预测系数动态调整（静止时不预测）
-      float predict_factor = (stable_counter < 5) ? 1.2 : 1.0;
-      dx *= predict_factor;
-      dy *= predict_factor;
-    }
-    xSemaphoreGive(xMutex);
-    // Serial.printf("%d,%d\n", dx, dy);
-    // Serial.printf("%d,%d,%f,%f,%f\n", dx, dy,roll, pitch, yaw);
-
-    // 调试时可启用
-    // Serial.printf("Raw:%.2f,%.2f | Filtered:%.2f,%.2f\n",
-    //               delta_yaw * -sensitivity,
-    //               delta_pitch * -sensitivity,
-    //               filtered_dx, filtered_dy);
-  }
+  btn_38.update();
+  btn_39.update();
+  btn_boot.update();
 
   if (millis() - power_check_time > 3000)
   {
-    bq27220.read_vlotage(data);
-    bq27220.state_of_charge(data);
-    bq27220.read_temp(data);
-    bq27220.current(data);
-
-    power_info.VBattVoltage = data.voltReg; // 电池电压
-    power_info.Percentage = voltage_percentage_calculation(power_info.VBattVoltage);
-    power_info.BatteryTemp = (uint8_t)(data.tempReg * 0.1 - 273.15);
-    power_info.ChargeCurrent = data.currentReg;
-
-    // Serial.printf("VBattVoltage:%d \n", power_info.VBattVoltage);
-    // Serial.printf("ChargeTargetVoltage:%d \n", power_info.ChargeTargetVoltage);
-    // Serial.printf("Percentage:%.2f \n", power_info.Percentage);
-    // Serial.printf("BatteryTemp:%d C\n", power_info.BatteryTemp);
-    // Serial.printf("ChargeCurrent:%.2f \n", power_info.ChargeCurrent);
-    // Serial.printf("%s\n", power_info.ChargeStatus);
+    about_info.VBattVoltage = bq27220.getVoltage();
+    ; // 电池电压
+    about_info.Percentage = voltage_percentage_calculation(about_info.VBattVoltage);
+    about_info.BatteryTemp = (uint8_t)(bq27220.getTemperature() * 0.1 - 273.15);
+    about_info.ChargeCurrent = bq27220.getCurrent();
 
     if (PPM.getVbusVoltage() > 2800)
     {
       if (!PPM.isEnableCharge())
       {
         PPM.enableCharge();
-        power_info.ChargeStatus = PPM.getChargeStatusString(); // 充电状态
+        about_info.ChargeStatus = PPM.getChargeStatusString(); // 充电状态
         Serial.println("USB connected, charging enabled.");
       }
     }
@@ -253,20 +127,23 @@ void loop()
       if (PPM.isEnableCharge())
       {
         PPM.disableCharge();
-        power_info.ChargeStatus = PPM.getChargeStatusString(); // 充电状态
+        about_info.ChargeStatus = PPM.getChargeStatusString(); // 充电状态
         Serial.println("USB not connected, charging disabled.");
       }
     }
 
-    if (src_load_page == 3)
+    if (src_load_page == 5)
     {
-      power_info.ChargeTargetVoltage = PPM.getChargeTargetVoltage(); // 充电目标电压
-      power_info.VBusVoltage = PPM.getVbusVoltage();                 // USB总线电压
-      power_info.VSysVoltage = PPM.getSystemVoltage();               // 系统电压
+      about_info.ChargeTargetVoltage = PPM.getChargeTargetVoltage(); // 充电目标电压
+      about_info.VBusVoltage = PPM.getVbusVoltage();                 // USB总线电压
+      about_info.VSysVoltage = PPM.getSystemVoltage();               // 系统电压
 
-      if (wifi_connect_status)
+      Serial.printf("getVbusVoltage:%d \n", about_info.VBusVoltage);
+      Serial.printf("VSysVoltage:%d \n", about_info.VSysVoltage);
+
+      if (WiFi.isConnected())
       {
-        power_info.Rssi = WiFi.RSSI();
+        about_info.Rssi = WiFi.RSSI();
       }
     }
     power_check_time = millis();
@@ -276,227 +153,120 @@ void loop()
   vTaskDelay(5 / portTICK_PERIOD_MS);
 }
 
-void perference_init()
+void setBacklight(uint8_t brightness)
 {
-  // 初始化存储系统
-  preferences.begin("wifi_config", false);
-
-  // 尝试读取已保存的WiFi配置
-  String savedSSID = preferences.getString(SSID_KEY, "");
-  String savedPASS = preferences.getString(PASS_KEY, "");
-
-  Serial.printf("Saved SSID:%s, PASS:%s\n", savedSSID.c_str(), savedPASS.c_str());
-
-  if (savedSSID == "")
-  {
-    savedSSID = WIFI_SSID;
-    savedPASS = WIFI_PASSWORD;
-  }
-
-  if (savedSSID != "")
-  {
-    // 尝试连接保存的WiFi
-    WiFi.begin(savedSSID.c_str(), savedPASS.c_str());
-
-    Serial.print("Connecting to ");
-    Serial.println(savedSSID);
-
-    // 等待连接结果
-    unsigned long startTime = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - startTime < 10000)
-    {
-      delay(500);
-      Serial.print(".");
-    }
-
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      WiFi.onEvent(WiFiEvent);
-      Serial.println("\nConnected successfully!");
-      Serial.print("IP address: ");
-      Serial.println(WiFi.localIP());
-      return; // 连接成功，跳过AP模式
-    }
-  }
-  setupAPMode();
-  delay(2000);
-  wifi_ap_init();
+  ledcWrite(pwm_channel, brightness);
 }
 
-void setupAPMode()
+void imuTask(void *pvParameters)
 {
-  // 设置AP模式
-  WiFi.softAP(AP_SSID, AP_PASSWORD);
-  Serial.print("AP Mode SSID: ");
-  Serial.println(AP_SSID);
-  Serial.print("AP IP Address: ");
-  Serial.println(WiFi.softAPIP());
+  while (1)
+  {
+    if (src_load_page == 2)
+    {
+      bhy.update();
+      gyro_data_buffer.read((char *)&gyr, sizeof(gyr));
+      accel_data_buffer.read((char *)&acc, sizeof(acc));
+      filter.updateIMU(gyr.x * gyro_scaling_factor,
+                       gyr.y * gyro_scaling_factor,
+                       gyr.z * gyro_scaling_factor,
+                       acc.x * accel_scaling_factor,
+                       acc.y * accel_scaling_factor,
+                       acc.z * accel_scaling_factor);
+      roll = filter.getRoll();
+      pitch = filter.getPitch() + 90; // 控制上下 0 <--> 180
+      yaw = filter.getYaw();          // 控制左右 0 <--> 360
 
-  // 设置Web服务器路由
-  server.on("/", HTTP_GET, handleRoot);
-  server.on("/configure", HTTP_POST, handleConfigure);
-  server.begin();
-}
+      // Serial.printf("%f,%f,%f\n", roll, pitch, yaw);
 
-void handleRoot()
-{
-  String html = R"(
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <style>
-        * {
-          box-sizing: border-box;
-          font-family: Arial, sans-serif;
-        }
-        
-        body {
-          margin: 0;
-          padding: 20px;
-          background: #f0f2f5;
-          min-height: 100vh;
-          display: flex;
-          flex-direction: column;
-        }
-        
-        .container {
-          max-width: 400px;
-          margin: auto;
-          background: white;
-          padding: 30px;
-          border-radius: 15px;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        h1 {
-          color: #1a73e8;
-          text-align: center;
-          margin: 0 0 25px 0;
-          font-size: 24px;
-        }
-        
-        .form-group {
-          margin-bottom: 20px;
-        }
-        
-        label {
-          display: block;
-          margin-bottom: 8px;
-          color: #5f6368;
-          font-size: 14px;
-          font-weight: bold;
-        }
-        
-        input {
-          width: 100%;
-          padding: 12px;
-          border: 1px solid #dadce0;
-          border-radius: 8px;
-          font-size: 16px;
-          margin-bottom: 5px;
-        }
-        
-        input:focus {
-          border-color: #1a73e8;
-          outline: none;
-        }
-        
-        button {
-          width: 100%;
-          background: #1a73e8;
-          color: white;
-          padding: 14px;
-          border: none;
-          border-radius: 8px;
-          font-size: 16px;
-          cursor: pointer;
-          transition: background 0.3s;
-        }
-        
-        button:hover {
-          background: #1557b0;
-        }
-        
-        @media (max-width: 480px) {
-          .container {
-            width: 100%;
-            padding: 20px;
-          }
-          
-          body {
-            padding: 10px;
+      static float last_pitch = 0, last_yaw = 0;
+      float delta_yaw = yaw - last_yaw;
+      float delta_pitch = pitch - last_pitch;
+
+      if (delta_yaw >= 180 || delta_yaw <= -180)
+      {
+        if (delta_yaw > 0)
+          delta_yaw = delta_yaw - 360;
+        else if (delta_yaw < 0)
+          delta_yaw = delta_yaw + 360;
+      }
+
+      // Serial.printf("%f,%f\n", yaw, delta_yaw);
+
+      last_pitch = pitch;
+      last_yaw = yaw;
+
+      // 动态灵敏度调整
+      float speed_factor = sqrt(delta_pitch * delta_pitch + delta_yaw * delta_yaw);
+      // float sensitivity = map(speed_factor, 0, 5.0, 30.0, 80.0); // 慢速10px/deg, 快速50px/deg
+
+      float sensitivity = 30.0 + 50.0 * (1.0 - exp(-speed_factor * 0.4));
+      // 新增：加入IIR低通滤波（系数0.2-0.5之间调节）
+      static float filtered_dx = 0, filtered_dy = 0;
+      filtered_dx = 0.3 * filtered_dx + 0.7 * (delta_yaw * -sensitivity);
+      filtered_dy = 0.3 * filtered_dy + 0.7 * (delta_pitch * -sensitivity);
+
+      // 转换为光标位移（限制最大速度）
+      dx = constrain((int)filtered_dx, -127, 127);
+      dy = constrain((int)filtered_dy, -127, 127);
+
+      if (xSemaphoreTake(xMutex, portMAX_DELAY) == pdTRUE)
+      {
+        // 优化死区处理（动态阈值 + 滞环控制）
+        static float last_dx = 0, last_dy = 0;
+        static int stable_counter = 0;
+
+        // 1. 动态噪声阈值（根据历史波动自动调整）
+        static float noise_threshold = 1.5;
+        noise_threshold = 0.9 * noise_threshold + 0.1 * (fabs(dx - last_dx) + fabs(dy - last_dy)) / 2;
+
+        // 2. 滞环控制（双阈值机制）
+        if (fabs(dx) < fmax(4.0, noise_threshold * 2) &&
+            fabs(dy) < fmax(4.0, noise_threshold * 2))
+        {
+          stable_counter++;
+          if (stable_counter < 5)
+          { // 持续5帧静止才归零
+            dx = 0;
+            dy = 0;
           }
         }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>WiFi config</h1>
-        <form action='/configure' method='post'>
-          <div class="form-group">
-            <label for="ssid">WiFi Name</label>
-            <input type="text" id="ssid" name="ssid" required 
-                   placeholder="Enter WiFi name">
-          </div>
-          <div class="form-group">
-            <label for="password">WiFi Password</label>
-            <input type="password" id="password" name="password" 
-                   placeholder="Enter WiFi password">
-          </div>
-          <button type="submit">Connect to network</button>
-        </form>
-      </div>
-    </body>
-    </html>
-  )";
+        else
+        {
+          stable_counter = 0;
+        }
 
-  server.send(200, "text/html", html);
-}
+        // 3. 运动状态检测（防止误触发）
+        if (stable_counter >= 5)
+        {
+          dx = 0;
+          dy = 0;
+          last_dx = 0; // 重置历史位置
+          last_dy = 0;
+        }
+        else
+        {
+          last_dx = dx;
+          last_dy = dy;
+        }
 
-// 处理配置请求
-void handleConfigure()
-{
-  String newSSID = server.arg("ssid");
-  String newPASS = server.arg("password");
-  Serial.printf("Received SSID: %s\n", newSSID.c_str());
-  Serial.printf("Received Password: %s\n", newPASS.c_str());
+        // 4. 预测系数动态调整（静止时不预测）
+        float predict_factor = (stable_counter < 5) ? 1.2 : 1.0;
+        dx *= predict_factor;
+        dy *= predict_factor;
+      }
+      xSemaphoreGive(xMutex);
+      // Serial.printf("%d,%d\n", dx, dy);
+      // Serial.printf("%d,%d,%f,%f,%f\n", dx, dy,roll, pitch, yaw);
 
-  if (newSSID.length() == 0)
-  {
-    server.send(400, "text/plain", "SSID cannot be empty");
-    return;
-  }
+      // 调试时可启用
+      // Serial.printf("Raw:%.2f,%.2f | Filtered:%.2f,%.2f\n",
+      //               delta_yaw * -sensitivity,
+      //               delta_pitch * -sensitivity,
+      //               filtered_dx, filtered_dy);
+    }
 
-  // 保存新凭证
-  preferences.putString(SSID_KEY, newSSID);
-  preferences.putString(PASS_KEY, newPASS);
-
-  // 尝试连接新网络
-  WiFi.begin(newSSID.c_str(), newPASS.c_str());
-
-  unsigned long startTime = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - startTime < 15000)
-  {
-    delay(500);
-    Serial.print(".");
-  }
-
-  if (WiFi.status() == WL_CONNECTED)
-  {
-    server.send(200, "text/plain",
-                "Connected successfully!\n"
-                "Device will restart in STA mode.\n"
-                "New IP: " +
-                    WiFi.localIP().toString());
-    delay(3000);
-    ESP.restart();
-  }
-  else
-  {
-    server.send(500, "text/plain",
-                "Connection failed! Please check credentials.\n"
-                "AP mode will remain active.");
+    vTaskDelay(5 / portTICK_PERIOD_MS);
   }
 }
 
@@ -526,15 +296,17 @@ void blehidTask(void *pvParameters)
 
 void wifiTask(void *pvParameters)
 {
+  vTaskDelay(3000 / portTICK_PERIOD_MS);
   perference_init();
   while (1)
   {
-    server.handleClient(); // 处理Web请求
+    if (AP_MODE)
+      server.handleClient(); // 处理Web请求
+
     if (WiFi.status() == WL_CONNECTED)
     {
-      // configTzTime(CFG_TIME_ZONE, NTP_SERVER1, NTP_SERVER2); // 设置时区和NTP服务器
-      wifi_on = true;
-      wifi_connect_status = true;
+      sntp_set_time_sync_notification_cb(time_sync_notification_handler); // 注册时间同步通知回调函数
+      configTzTime(CFG_TIME_ZONE, NTP_SERVER1, NTP_SERVER2);              // 设置时区和NTP服务器
       get_weather(cityname, apiKey);
       vTaskDelay(60000 / portTICK_PERIOD_MS);
     }
@@ -545,6 +317,15 @@ void wifiTask(void *pvParameters)
 void sycn_init()
 {
   xMutex = xSemaphoreCreateMutex();
+  xTaskCreatePinnedToCore(
+      imuTask,
+      "imu",
+      4096,
+      NULL,
+      3,
+      NULL,
+      1);
+
   xTaskCreatePinnedToCore(
       blehidTask,
       "blehid",
@@ -575,6 +356,9 @@ void adjustOrientation(float &x, float &y)
 void model_init()
 {
   /*********BHI260AP**********/
+  pinMode(BHI260_LDO_ENABLE, OUTPUT);
+  digitalWrite(BHI260_LDO_ENABLE, HIGH);
+  Wire.begin(I2C_SDA, I2C_SCL);
   Wire.setClock(10000000);
   bhy.setPins(BHI260AP_RST, BHI260AP_IRQ);
   if (!bhy.init(Wire, I2C_SDA, I2C_SCL, BHI260AP_SLAVE_ADDRESS_L))
@@ -586,8 +370,6 @@ void model_init()
       delay(1000);
     }
   }
-  // bhy.printSensors(Serial);
-
   Serial.println("Init BHI260AP Sensor success!");
   delay(5);
   bhi260_config();
@@ -596,6 +378,17 @@ void model_init()
   tft.init();
   tft.setRotation(SCREEN_ROTATION);
   tft.fillScreen(TFT_BLACK);
+
+  // #ifdef ESP32_DMA
+  //   tft.initDMA(); // To use SPI DMA you must call initDMA() to setup the DMA engine
+  // #endif
+
+  uint8_t brightness = 255;
+  while (brightness--)
+  {
+    analogWrite(TFT_BL, brightness);
+    delay(10);
+  }
 
   /*********TOUCH**********/
   pinMode(TOUCH_RST, OUTPUT);
@@ -614,13 +407,29 @@ void model_init()
   touch.setHomeButtonCallback([](void *user_data)
                               { 
                               home_count++;
-                              // Serial.printf("home_count:%d" + home_count); 
                               if (home_count > 15)
                               {
                                 home_count = 0;
                                 src_load_page = 0;
                                 lv_scr_load_anim(ui.screen_main, LV_SCR_LOAD_ANIM_FADE_ON, 150, 0, false);
                               } }, NULL);
+
+  // /*********SD CARD**********/
+  SDSPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
+  if (!SD.begin(SD_CS, SDSPI))
+  {
+    Serial.println("SD card initialization failed!");
+  }
+  else
+  {
+    Serial.print("SD initialization done.");
+    sd.sd_size = SD.cardSize() / 1024 / 1024.0;
+    sd.sd_used = SD.usedBytes() / 1024 / 1024.0;
+    Serial.print(sd.sd_size);
+    Serial.println("MB");
+    Serial.print(sd.sd_used);
+    Serial.println("MB");
+  }
 
   /*********RTC**********/
   if (!rtc.begin(Wire, PCF85063_SLAVE_ADDRESS, I2C_SDA, I2C_SCL))
@@ -658,8 +467,7 @@ void model_init()
   PPM.setPrechargeCurr(64);
   PPM.setChargerConstantCurr(1024);
 
-  power_info.ChargeTargetVoltage = PPM.getChargeTargetVoltage(); // 充电目标电压
-  power_info.VSysVoltage = PPM.getSystemVoltage();               // 系统电压
+  about_info.ChargeTargetVoltage = PPM.getChargeTargetVoltage(); // 充电目标电压
 
   if (PPM.getVbusVoltage() > 2800)
   {
@@ -671,62 +479,34 @@ void model_init()
     PPM.disableCharge();
     Serial.println("USB not connected, charging disabled.");
   }
-  power_info.ChargeStatus = PPM.getChargeStatusString(); // 充电状态
+  about_info.ChargeStatus = PPM.getChargeStatusString(); // 充电状态
 
-  /**********Current sensing************/
+  /**********Battery detection************/
   Wire.setClock(100000);
-  delay(5);
-  uint32_t devID = bq27220.get_dev_id(data);
-  if (devID != 0)
-  {
-    Serial.printf("BQ27220 Device ID: 0x%08X\n", devID);
-  }
+  bool ret = bq27220.init();
+  if (ret)
+    Serial.println("BQ27220 init success");
   else
-  {
-    Serial.println("Not find BQ27220 Device!");
-  }
-  // bq27220.read_registers(data);
-  bq27220.read_vlotage(data);
-  bq27220.read_temp(data);
-  bq27220.current(data);
+    Serial.println("BQ27220 init failed");
 
-  power_info.VBattVoltage = data.voltReg; // 电池电压
-  power_info.Percentage = voltage_percentage_calculation(power_info.VBattVoltage);
-  power_info.BatteryTemp = (uint8_t)(data.tempReg * 0.1 - 273.15);
-  power_info.ChargeCurrent = data.currentReg;
-
-  Serial.printf("VBattVoltage:%d \n", power_info.VBattVoltage);
-  Serial.printf("Percentage:%d%% \n", power_info.Percentage);
-  Serial.printf("BatteryTemp:%d C\n", power_info.BatteryTemp);
-  Serial.printf("ChargeCurrent:%.2f \n", power_info.ChargeCurrent);
+  about_info.VBattVoltage = bq27220.getVoltage();// 电池电压
+  about_info.Percentage = voltage_percentage_calculation(about_info.VBattVoltage);
+  about_info.BatteryTemp = (uint8_t)(bq27220.getTemperature() * 0.1 - 273.15);
+  about_info.ChargeCurrent = bq27220.getCurrent();
 
   /*********Button**********/
-  btn1.init(Button1, 50, nullptr);
-  btn1.setEventCallback(Button1_Callback);
-  btn2.init(Button2, 50, nullptr);
-  btn2.setEventCallback(Button2_Callback);
-  pinMode(Button3, INPUT_PULLUP);
-  btn3.init(Button3, 50, nullptr);
-  btn3.setEventCallback(Button3_Callback);
+  btn_38.init(Button1, 50, nullptr);
+  btn_38.setEventCallback(Button_38_Callback);
+  btn_39.init(Button2, 50, nullptr);
+  btn_39.setEventCallback(Button_39_Callback);
+  btn_boot.init(Button3, 50, nullptr);
+  btn_boot.setEventCallback(Button_Boot_Callback);
 
   // /*********BUZZER**********/
   pinMode(BUZZER_PIN, OUTPUT);
-  tone(BUZZER_PIN, 800); // 发出1000Hz的音调
+  tone(BUZZER_PIN, 1000); // 发出1000Hz的音调
   delay(300);
   noTone(BUZZER_PIN); // 停止发声
-
-  // /*********SD CARD**********/
-  SDSPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
-  if (!SD.begin(SD_CS, SDSPI))
-  {
-    Serial.println("SD card initialization failed!");
-  }
-  else
-  {
-    Serial.print("SD initialization done.");
-    Serial.print(SD.cardSize() / 1024 / 1024.0);
-    Serial.println("MB");
-  }
 }
 
 void lvgl_drv_init()
@@ -770,8 +550,9 @@ void bhi260_config()
   accel_scaling_factor = get_sensor_default_scaling(BHY2_SENSOR_ID_ACC_PASS);
 }
 
-void Button1_Callback(ButtonState event) // TFT_Backlight
+void Button_38_Callback(ButtonState event) // TFT_Backlight
 {
+  uint8_t brightness = 0;
   switch (event)
   {
   case BTN_CLICK_EVENT:
@@ -782,15 +563,25 @@ void Button1_Callback(ButtonState event) // TFT_Backlight
       String savedSSID = preferences.getString(SSID_KEY, "");
       String savedPASS = preferences.getString(PASS_KEY, "");
       WiFi.begin(savedSSID, savedPASS);
-      pinMode(TFT_BL, OUTPUT);
-      digitalWrite(TFT_BL, TFT_BACKLIGHT_ON);
+      uint8_t brightness = 255;
+      while (brightness--)
+      {
+        analogWrite(TFT_BL, brightness);
+        delay(10);
+      }
     }
     else
     {
+      uint8_t brightness = 0;
+      while (brightness++)
+      {
+        analogWrite(TFT_BL, brightness);
+        delay(10);
+      }
       WiFi.disconnect();
       move_mouse = false;
-      pinMode(TFT_BL, OUTPUT);
-      digitalWrite(TFT_BL, !TFT_BACKLIGHT_ON);
+      // pinMode(TFT_BL, OUTPUT);
+      // digitalWrite(TFT_BL, !TFT_BACKLIGHT_ON);
     }
     break;
   default:
@@ -798,55 +589,26 @@ void Button1_Callback(ButtonState event) // TFT_Backlight
   }
 }
 
-void Button2_Callback(ButtonState event) // air mouse move  BTN39
+void Button_39_Callback(ButtonState event) // air mouse move  btn_boot9
 {
   switch (event)
   {
   case BTN_CLICK_EVENT:
     Serial.println("BTN_39_CLICK_EVENT");
-    if (bleMouse.isConnected())
-    {
-      move_mouse = !move_mouse;
-      Serial.printf("move_mouse: %d\n", move_mouse);
-    }
 
     break;
   case BTN_DOUBLE_CLICK_EVENT:
     Serial.println("BTN_39_DOUBLE_CLICK_EVENT");
-    move_mouse = true;
-    Serial.printf("move_mouse: %d\n", move_mouse);
-    if (!bleMouse.isConnected())
-    {
-      bleMouse.begin();
-    }
-    break;
-
-  default:
     break;
   }
 }
 
-void Button3_Callback(ButtonState event) // boot wifi on/off
+void Button_Boot_Callback(ButtonState event) // boot wifi on/off
 {
   switch (event)
   {
   case BTN_CLICK_EVENT:
     Serial.println("BTN_0_CLICK_EVENT");
-    if (src_load_page == 0)
-      wifi_on = !wifi_on;
-
-    if (wifi_on)
-    {
-      Serial.println("WiFi on");
-      String savedSSID = preferences.getString(SSID_KEY, "");
-      String savedPASS = preferences.getString(PASS_KEY, "");
-      WiFi.begin(savedSSID, savedSSID);
-    }
-    else
-    {
-      Serial.println("WiFi off");
-      WiFi.disconnect();
-    }
     break;
 
   default:
@@ -860,7 +622,6 @@ void time_sync_notification_handler(timeval *t)
   rtc.hwClockWrite();
   struct tm timeinfo;
   rtc.getDateTime(&timeinfo);
-  // Serial.printf("timeinfo %d-%d-%d %d:%d:%d\n", timeinfo.tm_year, timeinfo.tm_mon, timeinfo.tm_mday, timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
   web_data.time.year = timeinfo.tm_year + 1900;
   web_data.time.month = timeinfo.tm_mon + 1;
   web_data.time.day = timeinfo.tm_mday;
@@ -891,14 +652,12 @@ void get_weather(const String &city, const String &apiKey)
     // 解析JSON
     StaticJsonDocument<1024> doc;
     deserializeJson(doc, payload);
-    JsonObject main = doc["main"];                          // 获取main对象
-    web_data.weather.temperature = (float)main["temp"];     // 从main对象中获取温度
-    web_data.weather.humidity = (uint8_t)main["humidity"];  // 湿度
-    web_data.weather.pressure = (uint16_t)main["pressure"]; // 气压
-    JsonObject wind = doc["wind"];                          // 获取wind对象
-    web_data.weather.wind_speed = (uint8_t)wind["speed"];   // 风速
-    // web_data.weather.city = doc["name"];                    // 城市
-    // web_data.weather.country = doc["sys"]["country"];       // 国家
+    JsonObject main = doc["main"];                                      // 获取main对象
+    web_data.weather.temperature = (float)main["temp"];                 // 从main对象中获取温度
+    web_data.weather.humidity = (uint8_t)main["humidity"];              // 湿度
+    web_data.weather.pressure = (uint16_t)main["pressure"];             // 气压
+    JsonObject wind = doc["wind"];                                      // 获取wind对象
+    web_data.weather.wind_speed = (uint8_t)wind["speed"];               // 风速
     web_data.weather.weather = (const char *)doc["weather"][0]["main"]; // 天气状况
 
     // Serial.printf("Temperature: %.1f\n", web_data.weather.temperature);
@@ -918,66 +677,26 @@ void get_weather(const String &city, const String &apiKey)
   }
 }
 
-static void WiFiEvent(WiFiEvent_t event)
-{
-  Serial.printf("[WiFi-event] event: %d\n", event);
-  switch (event)
-  {
-  case ARDUINO_EVENT_WIFI_READY:
-    Serial.println("WiFi interface ready");
-    break;
-  case ARDUINO_EVENT_WIFI_SCAN_DONE:
-    Serial.println("Completed scan for access points");
-    break;
-  case ARDUINO_EVENT_WIFI_STA_START:
-    Serial.println("WiFi client started");
-    break;
-  case ARDUINO_EVENT_WIFI_STA_STOP:
-    Serial.println("WiFi clients stopped");
-    break;
-  case ARDUINO_EVENT_WIFI_STA_CONNECTED:
-    sntp_set_time_sync_notification_cb(time_sync_notification_handler); // 注册时间同步通知回调函数
-    configTzTime(CFG_TIME_ZONE, NTP_SERVER1, NTP_SERVER2);              // 设置时区和NTP服务器
-    break;
-  case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
-    wifi_connect_status = false;
-    Serial.println("Disconnected from WiFi access point");
-    break;
-  case ARDUINO_EVENT_WIFI_STA_AUTHMODE_CHANGE:
-    Serial.println("Authentication mode of access point has changed");
-    break;
-  case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-    Serial.print("Obtained IP address: ");
-    Serial.println(WiFi.localIP());
-    break;
-  case ARDUINO_EVENT_WIFI_STA_LOST_IP:
-    Serial.println("Lost IP address and IP address is reset to 0");
-    break;
-  default:
-    break;
-  }
-}
-
 uint8_t voltage_percentage_calculation(uint16_t VBattVoltage)
 {
   /* | 电压区间 (V) | 对应电量 (%) | 区间特性 |
   |--------------|--------------|------------------------|
-  | 4.2 ~ 3.9 | 100% ~ 80% | 电压快速下降（高电量区）|
-  | 3.9 ~ 3.7 | 80% ~ 40%  | 电压平缓（中电量区） |
+  | 4.2 ~ 3.9 | 100% ~ 90% | 电压快速下降（高电量区）|
+  | 3.9 ~ 3.7 | 90% ~ 40%  | 电压平缓（中电量区） |
   | 3.7 ~ 3.4 | 40% ~ 10%  | 电压缓慢下降 |
   | 3.4 ~ 3.0 | 10% ~ 0%   | 电压快速下降（低电量区）|*/
   uint8_t Percentage = 0;
   if (VBattVoltage <= 4208 && VBattVoltage > 3900)
   {
-    Percentage = 100 - (4200 - VBattVoltage) / 300.0 * 20;
+    Percentage = 100 - (4200 - VBattVoltage) / 300.0 * 10;
   }
   else if (VBattVoltage <= 3900 && VBattVoltage > 3700)
   {
-    Percentage = 80 - (3900 - VBattVoltage) / 200.0 * 40;
+    Percentage = 100 - (3900 - VBattVoltage) / 200.0 * 40;
   }
   else if (VBattVoltage <= 3700 && VBattVoltage > 3400)
   {
-    Percentage = 40 - (3700 - VBattVoltage) / 300.0 * 30;
+    Percentage = 40 - (3700 - VBattVoltage) / 300.0 * 40;
   }
   else if (VBattVoltage <= 3400 && VBattVoltage > 3000)
   {
@@ -995,6 +714,7 @@ void my_disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *c
   tft.startWrite();
   tft.setAddrWindow(area->x1, area->y1, w, h);
   tft.pushColors((uint16_t *)&color_p->full, w * h, true);
+  // tft.pushPixelsDMA((uint16_t *)&color_p->full, w * h);
   tft.endWrite();
 
   lv_disp_flush_ready(disp_drv);
@@ -1015,16 +735,9 @@ void my_touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data)
 
     /*Set the coordinates*/
     data->point.x = x[0];
-    data->point.y = y[0] + LV_SCREEN_COMPENSATION - 1;
+    data->point.y = y[0] - 1;
 
-    // Serial.print("Data x ");
-    // Serial.println(x[0]);
     move_X = x[1] - x[0];
-    // Serial.print("Data x ");
-    // Serial.println(move_X);
-
-    // Serial.print("Data y ");
-    // Serial.println(y[0] + LV_SCREEN_COMPENSATION - 1);
   }
 }
 

@@ -23,10 +23,6 @@ static lv_disp_draw_buf_t draw_buf;
 static lv_color_t buf1[BUFFER_SIZE];
 static lv_color_t buf2[BUFFER_SIZE];
 
-// static lv_disp_draw_buf_t draw_buf;
-// static lv_color_t buf[screenWidth * screenHeight / 10];
-// LV_FONT_DECLARE(lv_font_Acme_Regular_24)
-
 TFT_eSPI tft = TFT_eSPI(); /* TFT instance */
 TouchDrvCSTXXX touch;
 int16_t x[5], y[5];
@@ -151,9 +147,9 @@ void setup()
   lv_disp_drv_init(&disp_drv);
   /*Change the following line to your display resolution*/
   disp_drv.hor_res = screenHeight;
-  disp_drv.ver_res = screenWidth; // 可能是颜色深度导致的显示高度下降，进行补偿
+  disp_drv.ver_res = screenWidth;
   disp_drv.offset_x = move_X;
-  disp_drv.offset_y = move_Y; // 可能是颜色深度导致的显示高度下降，进行补偿
+  disp_drv.offset_y = move_Y;
   disp_drv.flush_cb = my_disp_flush;
   disp_drv.draw_buf = &draw_buf;
   lv_disp_drv_register(&disp_drv);

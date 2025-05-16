@@ -7,6 +7,7 @@
 #include "SensorPCF85063.hpp"
 #include <XPowersLib.h>
 #include <BleMouse.h>
+#include <sstream>
 
 #ifdef __cplusplus
 extern "C"
@@ -67,23 +68,29 @@ Here is the touch configuration with rotation 1*/
 		lv_obj_t *screen_btn_weather_label;
 		lv_obj_t *screen_btn_mouse;
 		lv_obj_t *screen_btn_mouse_label;
+		lv_obj_t *screen_btn_info;
+		lv_obj_t *screen_btn_info_label;
 		lv_obj_t *screen_btn_set;
 		lv_obj_t *screen_btn_set_label;
+		lv_obj_t *screen_btn_sd;
+		lv_obj_t *screen_btn_sd_label;
+		lv_obj_t *screen_btn_shotdown;
+		lv_obj_t *screen_btn_shotdown_label;
+
 		lv_obj_t *screen_img_weather;
 		lv_obj_t *screen_img_mouse;
+		lv_obj_t *screen_img_sd;
 		lv_obj_t *screen_img_set;
+		lv_obj_t *screen_img_info;
+		lv_obj_t *screen_img_shotdown;
 
 		lv_obj_t *screen_cont_bettery0;
 		lv_obj_t *screen_cont_bettery1;
 		lv_obj_t *screen_cont_bettery2;
 		lv_obj_t *screen_label_bettery_num;
 
-		lv_obj_t *screen_btn_shotdown;
-		lv_obj_t *screen_btn_shotdown_label;
-		lv_obj_t *screen_img_shotdown;
-
-		lv_obj_t *screen_main_blehid; // 主界面
-		lv_obj_t *screen_blehid_bg;	  // 背景
+		lv_obj_t *screen_main_blehid;
+		lv_obj_t *screen_blehid_bg;
 		bool screen_main_del;
 		lv_obj_t *screen_btn_right;
 		lv_obj_t *screen_btn_right_label;
@@ -109,26 +116,29 @@ Here is the touch configuration with rotation 1*/
 		lv_obj_t *screen_weather_humidity_num;
 		lv_obj_t *screen_weather_img_humidity;
 
+		lv_obj_t *screen_main_sd;
+		bool screen_sd_del;
+		lv_obj_t *screen_sd_line;
+		lv_obj_t *screen_sd_label;
+		lv_obj_t *screen_sd_label_2;
+		lv_obj_t *screen_sd_label_3;
+
+		lv_obj_t *screen_main_set;
+		bool screen_set_del;
+		lv_obj_t *screen_set_btn_wifi;
+		lv_obj_t *screen_set_btn_ble;
+		lv_obj_t *screen_set_btn_brightness;
+		lv_obj_t *screen_set_cont_brightness;
+		lv_obj_t *screen_set_slider_brightness;
+
+
 		lv_obj_t *screen_main_about;
+		lv_obj_t *screen_about_bg;
+		lv_obj_t *screen_about_round;
 		bool screen_about_del;
-		lv_obj_t *screen_about_cont_about;
-		lv_obj_t *screen_about_label_mcu;
-		lv_obj_t *screen_about_label_wifirssi;
-		lv_obj_t *screen_about_label_Battery_level;
-		lv_obj_t *screen_about_label_vbus;
-		lv_obj_t *screen_about_label_vbatt;
-		lv_obj_t *screen_about_label_vsys;
-		lv_obj_t *screen_about_label_chargestatus;
-		lv_obj_t *screen_about_label_current;
-		lv_obj_t *screen_about_label_batterytemp;
-		lv_obj_t *screen_about_label_vtarget;
-		lv_obj_t *screen_about_cont_bg;
-
-		lv_obj_t *screen_about_list;
-		lv_obj_t *screen_about_item[5];
-		lv_obj_t *screen_about_item_label[5];
-
+		lv_obj_t *screen_about_roller_about;
 	} lv_ui;
+	extern lv_ui ui;
 
 	typedef struct
 	{
@@ -158,6 +168,8 @@ Here is the touch configuration with rotation 1*/
 		Time time;
 	} Web_data;
 
+	extern Web_data web_data;
+
 	typedef struct
 	{
 		uint16_t x;
@@ -169,20 +181,34 @@ Here is the touch configuration with rotation 1*/
 
 	typedef struct
 	{
+		std::string wifissid = "NULL";
 		int8_t Rssi = 0;
 		uint8_t Percentage = 0;
 		uint16_t VBusVoltage = 0;
 		uint16_t VBattVoltage = 0;
 		uint16_t VSysVoltage = 0;
 		uint16_t ChargeTargetVoltage = 0;
-		uint16_t ChargeCurrent = 0;
+		int16_t ChargeCurrent = 0;
 		const char *ChargeStatus = "NULL";
 		int8_t BatteryTemp = 0;
-	} Power_info;
+	} About_info;
+	extern About_info about_info;
+
+	typedef struct
+	{
+		float sd_size;
+		float sd_used;
+	} SD_Size;
+	extern SD_Size sd;
+
+	extern bool move_mouse;
+	extern uint8_t src_load_page;
+	extern std::stringstream about_text; // 创建一个字符串流对象
 
 	LV_IMG_DECLARE(_wifi_alpha_22x22);
 	LV_IMG_DECLARE(_ble2_alpha_22x22);
 	LV_IMG_DECLARE(_weather_alpha_30x30);
+	LV_IMG_DECLARE(_wenjian1_alpha_30x30);
 	LV_IMG_DECLARE(_shezhi_alpha_30x30);
 	LV_IMG_DECLARE(_info_circle_alpha_30x30);
 	LV_IMG_DECLARE(_mouse_alpha_30x30);
@@ -197,6 +223,14 @@ Here is the touch configuration with rotation 1*/
 	LV_IMG_DECLARE(_suncloud_alpha_50x50);
 	LV_IMG_DECLARE(_werther_bg2_284x76);
 	LV_IMG_DECLARE(_Wind_alpha_20x20);
+
+	LV_IMG_DECLARE(_bg3_284x76);
+	LV_IMG_DECLARE(_wifi_60x60);
+	LV_IMG_DECLARE(_bleicon_60x60);
+	LV_IMG_DECLARE(_brightness_60x60);
+	LV_IMG_DECLARE(_wifi1_60x60);
+	LV_IMG_DECLARE(_ble1_60x60);
+	LV_IMG_DECLARE(_brightness1_60x60);
 
 	LV_IMG_DECLARE(_LOGO1_58x66);
 
