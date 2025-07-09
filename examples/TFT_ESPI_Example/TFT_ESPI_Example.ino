@@ -15,9 +15,9 @@
 TFT_eSPI tft = TFT_eSPI(); // Invoke library
 
 #define BUTTON_38 38
-#define BUTTON_39 39
+#define BUTTON_0 0
 LilyGo_Button btn_38;
-LilyGo_Button btn_39;
+LilyGo_Button btn_0;
 
 void Button_38_Callback(ButtonState event) // TFT_Backlight
 {
@@ -54,7 +54,7 @@ void Button_38_Callback(ButtonState event) // TFT_Backlight
   }
 }
 
-void Button_39_Callback(ButtonState event) // TFT_Backlight
+void Button_0_Callback(ButtonState event) // TFT_Backlight
 {
   switch (event)
   {
@@ -70,7 +70,7 @@ void Button_39_Callback(ButtonState event) // TFT_Backlight
     tft.setTextColor(TFT_WHITE);
     tft.setTextSize(2);
     tft.println("BTN38 TFT backlight (ON/OFF)");
-    tft.println("BTN39 rotation display");
+    tft.println("BTN0 rotation display");
     break;
   }
 }
@@ -96,12 +96,12 @@ void setup()
   tft.setTextColor(TFT_WHITE);
   tft.setTextSize(2);
   tft.println("BTN38 TFT backlight (ON/OFF)");
-  tft.println("BTN39 rotation display");
+  tft.println("BTN0 rotation display");
 
   btn_38.init(BUTTON_38, 50, nullptr);
   btn_38.setEventCallback(Button_38_Callback);
-  btn_39.init(BUTTON_39, 50, nullptr);
-  btn_39.setEventCallback(Button_39_Callback);
+  btn_0.init(BUTTON_0, 50, nullptr);
+  btn_0.setEventCallback(Button_0_Callback);
   delay(1000);
   Serial.println("start...");
 }
@@ -109,6 +109,6 @@ void setup()
 void loop()
 {
   btn_38.update();
-  btn_39.update();
+  btn_0.update();
   delay(20);
 }

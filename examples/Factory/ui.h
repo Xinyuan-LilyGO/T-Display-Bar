@@ -65,21 +65,18 @@ Here is the touch configuration with rotation 1*/
 		lv_obj_t *screen_label_app_bg3;
 		lv_obj_t *screen_label_app_bg4;
 		lv_obj_t *screen_btn_weather;
-		lv_obj_t *screen_btn_weather_label;
 		lv_obj_t *screen_btn_mouse;
-		lv_obj_t *screen_btn_mouse_label;
 		lv_obj_t *screen_btn_info;
-		lv_obj_t *screen_btn_info_label;
 		lv_obj_t *screen_btn_set;
-		lv_obj_t *screen_btn_set_label;
 		lv_obj_t *screen_btn_sd;
-		lv_obj_t *screen_btn_sd_label;
 		lv_obj_t *screen_btn_shotdown;
-		lv_obj_t *screen_btn_shotdown_label;
+		lv_obj_t *screen_btn_bhi260;
+
 
 		lv_obj_t *screen_img_weather;
 		lv_obj_t *screen_img_mouse;
 		lv_obj_t *screen_img_sd;
+		lv_obj_t *screen_img_bhi260;
 		lv_obj_t *screen_img_set;
 		lv_obj_t *screen_img_info;
 		lv_obj_t *screen_img_shotdown;
@@ -123,6 +120,13 @@ Here is the touch configuration with rotation 1*/
 		lv_obj_t *screen_sd_label_2;
 		lv_obj_t *screen_sd_label_3;
 
+		lv_obj_t *screen_main_bhi260;
+		bool screen_bhi260_del;
+		lv_obj_t *screen_bhi260_roll;
+		lv_obj_t *screen_bhi260_pitch;
+		lv_obj_t *screen_bhi260_yaw;
+		lv_obj_t *screen_bhi260_walk;
+
 		lv_obj_t *screen_main_set;
 		bool screen_set_del;
 		lv_obj_t *screen_set_btn_wifi;
@@ -131,12 +135,16 @@ Here is the touch configuration with rotation 1*/
 		lv_obj_t *screen_set_cont_brightness;
 		lv_obj_t *screen_set_slider_brightness;
 
-
 		lv_obj_t *screen_main_about;
 		lv_obj_t *screen_about_bg;
 		lv_obj_t *screen_about_round;
 		bool screen_about_del;
 		lv_obj_t *screen_about_roller_about;
+
+		lv_obj_t *screen_wifi_ap;
+		lv_obj_t *wifiap_title;
+		lv_obj_t *wifiap_text;
+
 	} lv_ui;
 	extern lv_ui ui;
 
@@ -196,19 +204,48 @@ Here is the touch configuration with rotation 1*/
 
 	typedef struct
 	{
+		bool BHI260AP; // BHI260AP
+		bool TOUCH;
+		bool BQ27220; // BQ27220
+		bool PPM;	  // X-Powers PPM
+		bool SD;	  // SD Card
+		bool RTC;	  // PCF85063 RTC
+	} Peripheral;
+	extern Peripheral peripheral;
+
+	typedef struct
+	{
 		float sd_size;
 		float sd_used;
 	} SD_Size;
 	extern SD_Size sd;
 
+	enum screen_page
+	{
+		HOME_PAGE = 0,
+		WEATHER_PAGE = 1,
+		AIR_MOUSE_PAGE = 2,
+		SD_PAGE = 3,
+		BHI260_PAGE = 4,
+		SET_PAGE = 5,
+		ABOUT_PAGE = 6,
+	};
+	extern float roll, pitch, yaw;
+	extern uint32_t walk_count;
+
+	extern TaskHandle_t wifiTaskHandle;
+	extern TaskHandle_t bleTaskHandle;
+	extern TaskHandle_t imuTaskHandle;
+	extern TaskHandle_t loop_TaskHandle;
+
 	extern bool move_mouse;
 	extern uint8_t src_load_page;
 	extern std::stringstream about_text; // 创建一个字符串流对象
-
 	LV_IMG_DECLARE(_wifi_alpha_22x22);
 	LV_IMG_DECLARE(_ble2_alpha_22x22);
 	LV_IMG_DECLARE(_weather_alpha_30x30);
 	LV_IMG_DECLARE(_wenjian1_alpha_30x30);
+	LV_IMG_DECLARE(_gyroscope_alpha_35x35);
 	LV_IMG_DECLARE(_shezhi_alpha_30x30);
 	LV_IMG_DECLARE(_info_circle_alpha_30x30);
 	LV_IMG_DECLARE(_mouse_alpha_30x30);
@@ -233,6 +270,8 @@ Here is the touch configuration with rotation 1*/
 	LV_IMG_DECLARE(_brightness1_60x60);
 
 	LV_IMG_DECLARE(_LOGO1_58x66);
+	LV_IMG_DECLARE(_bxs_error_alpha_50x50);
+	LV_IMG_DECLARE(_yes_alt_alpha_50x50);
 
 	LV_FONT_DECLARE(lv_font_Abel_regular_10);
 	LV_FONT_DECLARE(lv_font_Adventpro_regular_10);

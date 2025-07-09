@@ -20,7 +20,7 @@
 #define TOUCH_RST  1
 
 #define Button1 38
-#define Button2 39
-#define Button3 0
+#define Button2 0
+
 
 

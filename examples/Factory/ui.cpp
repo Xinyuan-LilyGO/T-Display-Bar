@@ -1,4 +1,3 @@
-#include "ui.h"
 #include "event.h"
 
 extern const char *cityname;
@@ -34,14 +33,15 @@ struct APP_ICON_INFO
     uint8_t app_id;
 };
 
-#define APP_ICON_NUM 6
+#define APP_ICON_NUM 7
 APP_ICON_INFO app_icon_info[APP_ICON_NUM] = {
     {.app_btn = ui.screen_btn_weather, .btn_img = _weather_alpha_30x30, .btn_img_obj = ui.screen_img_weather, .x_pos = 10, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_weather_event_handler, .app_id = 0},
     {.app_btn = ui.screen_btn_mouse, .btn_img = _mouse_alpha_30x30, .btn_img_obj = ui.screen_img_mouse, .x_pos = 80, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_mouse_event_handler, .app_id = 1},
     {.app_btn = ui.screen_btn_sd, .btn_img = _wenjian1_alpha_30x30, .btn_img_obj = ui.screen_img_sd, .x_pos = 150, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_sd_event_handler, .app_id = 2},
-    {.app_btn = ui.screen_btn_set, .btn_img = _shezhi_alpha_30x30, .btn_img_obj = ui.screen_img_set, .x_pos = 220, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_set_event_handler, .app_id = 3},
-    {.app_btn = ui.screen_btn_info, .btn_img = _info_circle_alpha_30x30, .btn_img_obj = ui.screen_img_info, .x_pos = 290, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_info_event_handler, .app_id = 4},
-    {.app_btn = ui.screen_btn_shotdown, .btn_img = _shutdown_alpha_30x30, .btn_img_obj = ui.screen_img_shotdown, .x_pos = 360, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_shutdown_event_handler, .app_id = 5},
+    {.app_btn = ui.screen_btn_bhi260, .btn_img = _gyroscope_alpha_35x35, .btn_img_obj = ui.screen_img_bhi260, .x_pos = 220, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_bhi260_event_handler, .app_id = 3},
+    {.app_btn = ui.screen_btn_set, .btn_img = _shezhi_alpha_30x30, .btn_img_obj = ui.screen_img_set, .x_pos = 290, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_set_event_handler, .app_id = 4},
+    {.app_btn = ui.screen_btn_info, .btn_img = _info_circle_alpha_30x30, .btn_img_obj = ui.screen_img_info, .x_pos = 360, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_info_event_handler, .app_id = 5},
+    {.app_btn = ui.screen_btn_shotdown, .btn_img = _shutdown_alpha_30x30, .btn_img_obj = ui.screen_img_shotdown, .x_pos = 430, .y_pos = 6, .width = 50, .height = 50, .event_cb = screen_btn_shutdown_event_handler, .app_id = 6},
 };
 
 void init_style(void)
@@ -314,10 +314,13 @@ void ui_main_init(lv_ui *ui)
         lv_img_set_angle(app_icon_info[i].btn_img_obj, 0);
         lv_obj_set_pos(app_icon_info[i].btn_img_obj, app_icon_info[i].x_pos + 10, 16);
         lv_obj_set_size(app_icon_info[i].btn_img_obj, app_icon_info[i].width - 20, app_icon_info[i].height - 20);
+        if (app_icon_info[i].app_id == 3)
+        {
+            lv_obj_set_pos(app_icon_info[i].btn_img_obj, app_icon_info[i].x_pos + 8, 14);
+            lv_obj_set_size(app_icon_info[i].btn_img_obj, app_icon_info[i].width - 15, app_icon_info[i].height - 15);
+        }
 
         app_icon_info[i].app_btn = lv_btn_create(ui->screen_cont_app);
-        // app_icon_info[i].app_label = lv_label_create(app_icon_info[i].app_btn);
-        // lv_label_set_text(app_icon_info[i].app_label, "");
         lv_obj_set_pos(app_icon_info[i].app_btn, app_icon_info[i].x_pos, app_icon_info[i].y_pos);
         lv_obj_set_size(app_icon_info[i].app_btn, app_icon_info[i].width, app_icon_info[i].height);
         lv_obj_set_style_bg_opa(app_icon_info[i].app_btn, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -648,12 +651,12 @@ void ui_sd_init(lv_ui *ui)
     lv_obj_set_style_border_width(ui->screen_sd_line, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_dir(ui->screen_sd_line, LV_GRAD_DIR_HOR, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_grad_color(ui->screen_sd_line, lv_color_hex(0x097dff), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_main_stop(ui->screen_sd_line, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_grad_stop(ui->screen_sd_line, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_main_stop(ui->screen_sd_line, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_grad_stop(ui->screen_sd_line, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_all(ui->screen_sd_line, 0, LV_STATE_DEFAULT);
 
     ui->screen_sd_label_2 = lv_label_create(ui->screen_main_sd);
-    lv_label_set_text_fmt(ui->screen_sd_label_2, "SD Card Size: %.2f MB", sd.sd_size);
+    lv_label_set_text(ui->screen_sd_label_2, "SD Card Size: NOT MOUNTED");
     lv_label_set_long_mode(ui->screen_sd_label_2, LV_LABEL_LONG_WRAP);
     lv_obj_set_size(ui->screen_sd_label_2, 284, 12);
     lv_obj_set_pos(ui->screen_sd_label_2, 10, 30);
@@ -661,12 +664,52 @@ void ui_sd_init(lv_ui *ui)
     lv_obj_set_style_text_font(ui->screen_sd_label_2, &lv_font_Alatsi_Regular_12, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui->screen_sd_label_3 = lv_label_create(ui->screen_main_sd);
-    lv_label_set_text_fmt(ui->screen_sd_label_3, "SD Card Used Size: %.2f MB", sd.sd_used);
+    lv_label_set_text(ui->screen_sd_label_3, "SD Card Used Size: NOT MOUNTED");
     lv_label_set_long_mode(ui->screen_sd_label_3, LV_LABEL_LONG_WRAP);
     lv_obj_set_size(ui->screen_sd_label_3, 284, 12);
     lv_obj_set_pos(ui->screen_sd_label_3, 10, 50);
     lv_obj_set_style_text_color(ui->screen_sd_label_3, lv_color_hex(0xffffff), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(ui->screen_sd_label_3, &lv_font_Alatsi_Regular_12, LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
+lv_obj_t *bhi260_label[4] = {ui.screen_bhi260_roll,
+                             ui.screen_bhi260_pitch,
+                             ui.screen_bhi260_yaw,
+                             ui.screen_bhi260_walk};
+void ui_bhi260_init(lv_ui *ui)
+{
+    ui->screen_main_bhi260 = lv_obj_create(NULL);
+    lv_obj_set_size(ui->screen_main_bhi260, LV_SCREEN_WIDTH, LV_SCREEN_HEIGHT);
+    lv_obj_set_pos(ui->screen_main_bhi260, 0, 0);
+    lv_obj_set_style_bg_img_src(ui->screen_main_bhi260, &_bg3_284x76, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_scrollbar_mode(ui->screen_main_bhi260, LV_SCROLLBAR_MODE_OFF);
+
+    static lv_style_t style_label;
+    lv_style_init(&style_label);
+    lv_style_set_text_color(&style_label, lv_color_black());
+    lv_style_set_text_font(&style_label, &lv_font_Acme_Regular_14);
+    lv_style_set_text_align(&style_label, LV_TEXT_ALIGN_CENTER);
+    lv_style_set_text_letter_space(&style_label, 2);
+    lv_style_set_text_line_space(&style_label, 10);
+    lv_style_set_pad_top(&style_label, 10);
+    lv_style_set_pad_bottom(&style_label, 10);
+    lv_style_set_pad_right(&style_label, 0);
+    lv_style_set_pad_left(&style_label, 0);
+
+    lv_style_set_bg_opa(&style_label, LV_OPA_60);
+    lv_style_set_bg_color(&style_label, lv_color_white());
+    lv_style_set_radius(&style_label, 6);
+    lv_style_set_border_width(&style_label, 0);
+
+    char *bhi260_text[4] = {"Roll:\n0.00", "Pitch:\n0.00", "Yaw:\n0.00", "Walk:\n0.00"};
+    for (int i = 0; i < 4; i++)
+    {
+        bhi260_label[i] = lv_label_create(ui->screen_main_bhi260);
+        lv_obj_set_size(bhi260_label[i], 60, 60);
+        lv_obj_set_pos(bhi260_label[i], 8 + i * 70, 8);
+        lv_label_set_text(bhi260_label[i], bhi260_text[i]);
+        lv_obj_add_style(bhi260_label[i], &style_label, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
 }
 
 void ui_set_init(lv_ui *ui)
@@ -771,6 +814,8 @@ void ui_about_init(lv_ui *ui)
     lv_style_set_pad_all(&style_about, 0);
 
     ui->screen_main_about = lv_obj_create(NULL);
+    lv_obj_set_pos(ui->screen_main_about, 0, 0);
+    lv_obj_set_size(ui->screen_main_about, 284, 76);
     lv_obj_add_style(ui->screen_main_about, &style_about, 0);
     lv_obj_set_scrollbar_mode(ui->screen_main_about, LV_SCROLLBAR_MODE_OFF);
 
@@ -791,6 +836,8 @@ void ui_about_init(lv_ui *ui)
     std::string str = about_text.str();
 
     ui->screen_about_roller_about = lv_roller_create(ui->screen_main_about);
+    lv_obj_set_pos(ui->screen_about_roller_about, 0, 0);
+    lv_obj_set_size(ui->screen_about_roller_about, 284, 76);
     lv_obj_add_style(ui->screen_about_roller_about, &style_about, 0);
     lv_obj_set_style_bg_opa(ui->screen_about_roller_about, LV_OPA_TRANSP, LV_PART_SELECTED);
     lv_obj_set_style_text_font(ui->screen_about_roller_about, &lv_font_OrbitronBlack_20, LV_PART_SELECTED);
@@ -830,7 +877,7 @@ void ui_timer_cb(lv_timer_t *timer)
 
     switch (src_load_page)
     {
-    case 0: // mian page
+    case HOME_PAGE: // mian page
     {
         lv_label_set_text_fmt(ui.screen_label_time, "%02d:%02d", web_data.time.hour, web_data.time.minute);
         lv_obj_set_size(ui.screen_cont_bettery2, ((uint8_t)about_info.Percentage * 28 / 100), 10);
@@ -876,7 +923,7 @@ void ui_timer_cb(lv_timer_t *timer)
         }
         break;
     }
-    case 1: // weather page
+    case WEATHER_PAGE: // weather page
     {
         if (web_data.time.second > 59)
         {
@@ -948,13 +995,21 @@ void ui_timer_cb(lv_timer_t *timer)
         }
         break;
     }
-    case 2: // air mouse page
+    case AIR_MOUSE_PAGE: // air mouse page
         break;
-    case 3: // sd page
+    case SD_PAGE: // sd page
+        lv_label_set_text_fmt(ui.screen_sd_label_2, "SD Card Size: %.2f MB", sd.sd_size);
+        lv_label_set_text_fmt(ui.screen_sd_label_3, "SD Card Used Size: %.2f MB", sd.sd_used);
         break;
-    case 4: // set page
+    case BHI260_PAGE: // set page
+        lv_label_set_text_fmt(bhi260_label[0], "Roll:\n%.2f", roll);
+        lv_label_set_text_fmt(bhi260_label[1], "Pitch:\n%.2f", pitch);
+        lv_label_set_text_fmt(bhi260_label[2], "Yaw:\n%.2f", yaw);
+        lv_label_set_text_fmt(bhi260_label[3], "Walk:\n%d", walk_count);
         break;
-    case 5: // about page
+    case SET_PAGE: // set page
+        break;
+    case ABOUT_PAGE: // about page
     {
         if (about_count >= 3)
         {
@@ -1073,56 +1128,177 @@ void Openinganimation()
         lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t)lv_obj_set_y);
 
         lv_anim_start(&a);
-
-        lv_task_handler();
     }
+}
+
+void Check_Error_ui()
+{
+    char title[16] = "SUCCESS";
+    char check_text[200] = "";
+    if (!peripheral.BHI260AP)
+    {
+        strcpy(title, "WARNING");
+        strcat(check_text, "BHI260AP not found\n");
+    }
+    if (!peripheral.BQ27220)
+    {
+        strcpy(title, "WARNING");
+        strcat(check_text, "BQ27220 not found\n");
+    }
+    if (!peripheral.PPM)
+    {
+        strcpy(title, "WARNING");
+        strcat(check_text, "PPM not found\n");
+    }
+    if (!peripheral.RTC)
+    {
+        strcpy(title, "WARNING");
+        strcat(check_text, "RTC not found\n");
+    }
+    if (!peripheral.SD)
+    {
+        strcpy(title, "WARNING");
+        strcat(check_text, "SD not found\n");
+    }
+    if (!peripheral.TOUCH)
+    {
+        strcpy(title, "WARNING");
+        strcat(check_text, "TOUCH not found\n");
+    }
+
+    if (strcmp(title, "SUCCESS") == 0)
+    {
+        strcpy(check_text, "All peripherals found\n");
+    }
+    Serial.printf("check_label:");
+    Serial.println(check_text);
+
+    lv_obj_t *scr = lv_scr_act();
+    lv_obj_remove_style_all(scr);
+
+    lv_obj_t *Openinganimation_bg = lv_img_create(scr);
+    lv_img_set_src(Openinganimation_bg, &_bg3_284x76);
+
+    lv_obj_t *screen_cheak_img = lv_img_create(scr);
+    lv_obj_add_flag(screen_cheak_img, LV_OBJ_FLAG_CLICKABLE);
+    if (strcmp(title, "SUCCESS") == 0)
+    {
+        lv_img_set_src(screen_cheak_img, &_yes_alt_alpha_50x50);
+    }
+    else
+    {
+        lv_img_set_src(screen_cheak_img, &_bxs_error_alpha_50x50);
+    }
+    lv_img_set_pivot(screen_cheak_img, 50, 50);
+    lv_img_set_angle(screen_cheak_img, 0);
+    lv_obj_set_pos(screen_cheak_img, 3, 18);
+    lv_obj_set_size(screen_cheak_img, 50, 50);
+
+    lv_obj_set_style_img_recolor_opa(screen_cheak_img, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_img_opa(screen_cheak_img, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(screen_cheak_img, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_clip_corner(screen_cheak_img, true, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t *screen_cheak_title = lv_label_create(scr);
+    lv_label_set_text(screen_cheak_title, title);
+    lv_label_set_long_mode(screen_cheak_title, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(screen_cheak_title, 0, 0);
+    lv_obj_set_size(screen_cheak_title, 284, 20);
+
+    lv_obj_set_style_border_width(screen_cheak_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(screen_cheak_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    if (strcmp(title, "SUCCESS") == 0)
+    {
+        lv_obj_set_style_text_color(screen_cheak_title, lv_color_hex(0xffffff), LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+    else
+    {
+        lv_obj_set_style_text_color(screen_cheak_title, lv_color_hex(0xff0000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+    lv_obj_set_style_text_font(screen_cheak_title, &lv_font_Acme_Regular_22, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(screen_cheak_title, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(screen_cheak_title, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(screen_cheak_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(screen_cheak_title, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(screen_cheak_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(screen_cheak_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(screen_cheak_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t *screen_cheak_label = lv_label_create(scr);
+    lv_label_set_text(screen_cheak_label, check_text);
+    lv_label_set_long_mode(screen_cheak_label, LV_LABEL_LONG_WRAP);
+    lv_obj_set_pos(screen_cheak_label, 55, 22);
+    lv_obj_set_size(screen_cheak_label, 220, 40);
+
+    lv_obj_set_style_border_width(screen_cheak_label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(screen_cheak_label, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+    if (strcmp(title, "SUCCESS") == 0)
+    {
+        lv_obj_set_style_text_color(screen_cheak_label, lv_color_black(), LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+    else
+    {
+        lv_obj_set_style_text_color(screen_cheak_label, lv_color_hex(0xff0000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+    lv_obj_set_style_text_font(screen_cheak_label, &lv_font_Acme_Regular_12, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(screen_cheak_label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(screen_cheak_label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(screen_cheak_label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(screen_cheak_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(screen_cheak_label, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(screen_cheak_label, lv_color_hex(0x7bc0fa), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(screen_cheak_label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(screen_cheak_label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
 void wifi_ap_init()
 {
-    lv_obj_t *wifiap_title = lv_label_create(lv_scr_act());
-    lv_label_set_text(wifiap_title, "WIFI CONFIG");
-    lv_obj_set_pos(wifiap_title, 0, 0);
-    lv_obj_set_size(wifiap_title, LV_SCREEN_WIDTH, 20);
+    ui.screen_wifi_ap = lv_obj_create(NULL);
+    ui.wifiap_title = lv_label_create(ui.screen_wifi_ap);
+    lv_label_set_text(ui.wifiap_title, "WIFI CONFIG");
+    lv_obj_set_pos(ui.wifiap_title, 0, 0);
+    lv_obj_set_size(ui.wifiap_title, LV_SCREEN_WIDTH, 20);
 
-    lv_obj_set_style_border_width(wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(wifiap_title, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(wifiap_title, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(wifiap_title, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(wifiap_title, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(wifiap_title, &lv_font_SourceHanSerifSC_Regular_16, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(wifiap_title, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(wifiap_title, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_shadow_width(wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui.wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui.wifiap_title, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui.wifiap_title, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(ui.wifiap_title, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui.wifiap_title, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui.wifiap_title, &lv_font_SourceHanSerifSC_Regular_16, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui.wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui.wifiap_title, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui.wifiap_title, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui.wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(ui.wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(ui.wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(ui.wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(ui.wifiap_title, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     String ip = WiFi.softAPIP().toString();
     Serial.println("AP IP address: " + ip);
 
-    lv_obj_t *wifiap_text = lv_label_create(lv_scr_act());
-    lv_label_set_text_fmt(wifiap_text, "Please connect Display-Bar Config WIFI with your mobile phone and go to %s to configure WIFI", ip.c_str());
-    lv_label_set_long_mode(wifiap_text, LV_LABEL_LONG_WRAP);
-    lv_obj_set_size(wifiap_text, LV_SCREEN_WIDTH, 56);
-    lv_obj_set_pos(wifiap_text, 0, 20);
-    lv_obj_set_style_bg_opa(wifiap_text, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_radius(wifiap_text, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_color(wifiap_text, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_color(wifiap_text, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_font(wifiap_text, &lv_font_SourceHanSerifSC_Regular_12, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_line_space(wifiap_text, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_letter_space(wifiap_text, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_text_align(wifiap_text, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(wifiap_text, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+    ui.wifiap_text = lv_label_create(ui.screen_wifi_ap);
+    lv_label_set_text_fmt(ui.wifiap_text, "Please connect Display-Bar Config WIFI with your mobile phone and go to %s to configure WIFI", ip.c_str());
+    lv_label_set_long_mode(ui.wifiap_text, LV_LABEL_LONG_WRAP);
+    lv_obj_set_size(ui.wifiap_text, LV_SCREEN_WIDTH, 56);
+    lv_obj_set_pos(ui.wifiap_text, 0, 20);
+    lv_obj_set_style_bg_opa(ui.wifiap_text, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(ui.wifiap_text, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(ui.wifiap_text, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(ui.wifiap_text, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(ui.wifiap_text, &lv_font_SourceHanSerifSC_Regular_12, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_line_space(ui.wifiap_text, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_letter_space(ui.wifiap_text, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(ui.wifiap_text, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(ui.wifiap_text, 2, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_scr_load_anim(ui.screen_wifi_ap, LV_SCR_LOAD_ANIM_FADE_IN, 0, 800, false);
+
 }
 
 void enter_ui(void)
 {
     Serial.println("enter_ui");
-    Openinganimation();
 
     init_style();
 
@@ -1130,10 +1306,11 @@ void enter_ui(void)
     ui_weather_init(&ui);
     ui_air_mouse(&ui);
     ui_sd_init(&ui);
+    ui_bhi260_init(&ui);
     ui_about_init(&ui);
     ui_set_init(&ui);
 
-    lv_scr_load_anim(ui.screen_main, LV_SCR_LOAD_ANIM_NONE, 0, 3000, false);
+    lv_scr_load_anim(ui.screen_main, LV_SCR_LOAD_ANIM_NONE, 0, 4000, false);
 
     lv_timer_t *timer = lv_timer_create(ui_timer_cb, 1000, NULL);
     lv_timer_ready(timer);

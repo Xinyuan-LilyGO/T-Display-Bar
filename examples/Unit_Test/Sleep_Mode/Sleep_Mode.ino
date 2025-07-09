@@ -2,6 +2,7 @@
 #include "LilyGo_Button.h"
 
 #define BUTTON 38
+#define BHI260AP_ENABLE 16
 LilyGo_Button btn;
 
 void Button1_Callback(ButtonState event) //TFT_Backlight
@@ -12,6 +13,8 @@ void Button1_Callback(ButtonState event) //TFT_Backlight
     Serial.println("long pressed...");
     // into deep sleep mode
     Serial.println("deep sleep...");
+    pinMode(BHI260AP_ENABLE, OUTPUT);
+    digitalWrite(BHI260AP_ENABLE, LOW);
     delay(1000);
     esp_deep_sleep_start();
     break;

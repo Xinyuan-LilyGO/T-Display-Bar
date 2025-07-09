@@ -13,7 +13,8 @@
 #include <MadgwickAHRS.h> //MadgwickAHRS from https://github.com/arduino-libraries/MadgwickAHRS
 #include <HTTPClient.h>
 #include "lvgl.h"
-#include "bq27220.h"
+// #include "bq27220.h"
+#include <GaugeBQ27220.hpp>
 
 /***********Weather Server************/
 #define WEATHER_UPDATE_TIME 1

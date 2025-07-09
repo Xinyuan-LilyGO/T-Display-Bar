@@ -112,6 +112,11 @@
         "stdbool.h": "c",
         "bhi260ap_aux_bmm150.fw.h": "c",
         "bhi260ap_aux_bmm150-flash.fw.h": "c",
-        "bq27220_data_memory.h": "c"
-    }
+        "bq27220_data_memory.h": "c",
+        "bhy2_swim.h": "c",
+        "sensorbhy2define.h": "c",
+        "board.h": "c",
+        "gaugebq27220.hpp": "c"
+    },
+    "idf.portWin": "COM79"
 }

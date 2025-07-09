@@ -16,6 +16,9 @@
 #include <XPowersLib.h>
 #include "ui.h"
 #include "board.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/timers.h>
 
 extern bool no_Back;
 extern bool mouse_wheel;
@@ -28,7 +31,7 @@ void screen_btn_weather_event_handler(lv_event_t *e)
     {
     case LV_EVENT_CLICKED:
     {
-        src_load_page = 1;
+        src_load_page = WEATHER_PAGE;
         Serial.printf("src_load_page:%d\n", src_load_page);
         lv_scr_load_anim(ui.screen_main_weather, LV_SCR_LOAD_ANIM_FADE_IN, 100, 100, false);
         break;
@@ -45,7 +48,7 @@ void screen_btn_mouse_event_handler(lv_event_t *e)
     {
     case LV_EVENT_CLICKED:
     {
-        src_load_page = 2;
+        src_load_page = AIR_MOUSE_PAGE;
         Serial.printf("src_load_page:%d\n", src_load_page);
         lv_scr_load_anim(ui.screen_main_blehid, LV_SCR_LOAD_ANIM_FADE_IN, 100, 100, false);
         break;
@@ -62,9 +65,26 @@ void screen_btn_sd_event_handler(lv_event_t *e)
     {
     case LV_EVENT_CLICKED:
     {
-        src_load_page = 3;
+        src_load_page = SD_PAGE;
         Serial.printf("src_load_page:%d\n", src_load_page);
         lv_scr_load_anim(ui.screen_main_sd, LV_SCR_LOAD_ANIM_FADE_IN, 100, 100, false);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+void screen_btn_bhi260_event_handler(lv_event_t *e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    switch (code)
+    {
+    case LV_EVENT_CLICKED:
+    {
+        src_load_page = BHI260_PAGE;
+        Serial.printf("src_load_page:%d\n", src_load_page);
+        lv_scr_load_anim(ui.screen_main_bhi260, LV_SCR_LOAD_ANIM_FADE_IN, 100, 100, false);
         break;
     }
     default:
@@ -79,7 +99,7 @@ void screen_btn_set_event_handler(lv_event_t *e)
     {
     case LV_EVENT_CLICKED:
     {
-        src_load_page = 4;
+        src_load_page = SET_PAGE;
         Serial.printf("src_load_page:%d\n", src_load_page);
         lv_scr_load_anim(ui.screen_main_set, LV_SCR_LOAD_ANIM_FADE_IN, 100, 100, false);
         break;
@@ -96,7 +116,7 @@ void screen_btn_info_event_handler(lv_event_t *e)
     {
     case LV_EVENT_CLICKED:
     {
-        src_load_page = 5;
+        src_load_page = ABOUT_PAGE;
         Serial.printf("src_load_page:%d\n", src_load_page);
         lv_scr_load_anim(ui.screen_main_about, LV_SCR_LOAD_ANIM_FADE_IN, 100, 100, false);
         break;
@@ -265,12 +285,12 @@ void screen_btn_ble_event_handler(lv_event_t *e)
         if (ble_status == 1)
         {
             Serial.println("ble open");
+            move_mouse = true;
             if (!bleMouse.isConnected())
             {
                 bleMouse.begin();
-                lv_obj_set_style_bg_img_src(ui.screen_set_btn_ble, &_bleicon_60x60, LV_STATE_DEFAULT);
             }
-            move_mouse = true;
+            lv_obj_set_style_bg_img_src(ui.screen_set_btn_ble, &_bleicon_60x60, LV_STATE_DEFAULT);
         }
         else
         {
@@ -302,6 +322,7 @@ void screen_btn_brightness_event_handler(lv_event_t *e)
                 lv_obj_set_pos(ui.screen_set_cont_brightness, 0, 0);
                 lv_obj_set_size(ui.screen_set_cont_brightness, 205, 60);
                 lv_obj_set_scrollbar_mode(ui.screen_set_cont_brightness, LV_SCROLLBAR_MODE_OFF);
+                lv_obj_set_style_pad_all(ui.screen_set_cont_brightness, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
                 // Write style for screen_walk_cont_2, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
                 lv_obj_set_style_border_width(ui.screen_set_cont_brightness, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -312,8 +333,9 @@ void screen_btn_brightness_event_handler(lv_event_t *e)
                 ui.screen_set_slider_brightness = lv_slider_create(ui.screen_set_cont_brightness);
                 lv_slider_set_range(ui.screen_set_slider_brightness, 0, 255);
                 lv_slider_set_value(ui.screen_set_slider_brightness, brightness, LV_ANIM_OFF);
+                lv_obj_set_style_align(ui.screen_set_slider_brightness, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                 lv_obj_set_size(ui.screen_set_slider_brightness, 180, 15);
-                lv_obj_set_pos(ui.screen_set_slider_brightness, 0, 10);
+                // lv_obj_set_pos(ui.screen_set_slider_brightness, 5, 20);
                 lv_obj_set_style_bg_color(ui.screen_set_slider_brightness, lv_color_hex(0xffffff), LV_PART_MAIN | LV_STATE_DEFAULT);
                 lv_obj_set_style_bg_color(ui.screen_set_slider_brightness, lv_color_hex(0xa6a6a6), LV_PART_INDICATOR | LV_STATE_DEFAULT);
                 lv_obj_set_style_bg_grad_dir(ui.screen_set_slider_brightness, LV_GRAD_DIR_HOR, LV_PART_INDICATOR | LV_STATE_DEFAULT);
