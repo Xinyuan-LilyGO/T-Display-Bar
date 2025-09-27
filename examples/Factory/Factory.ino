@@ -450,7 +450,7 @@ void model_init()
     PPM.setSysPowerDownVoltage(3200);
     PPM.setChargeTargetVoltage(4208); // 3364mv
     PPM.setPrechargeCurr(64);
-    PPM.setChargerConstantCurr(1024);
+    PPM.setChargerConstantCurr(64);
 
     about_info.ChargeTargetVoltage = PPM.getChargeTargetVoltage(); // 充电目标电压
 

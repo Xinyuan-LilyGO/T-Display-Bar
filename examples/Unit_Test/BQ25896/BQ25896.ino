@@ -66,7 +66,7 @@ void setup()
 
     // The premise is that Limit Pin is disabled, or it will only follow the maximum charging current set by Limi tPin.
     // Set the charging current , Range:0~5056mA ,step:64mA
-    PPM.setChargerConstantCurr(1024);
+    PPM.setChargerConstantCurr(64);
 
     // Get the set charging current
     PPM.getChargerConstantCurr();
