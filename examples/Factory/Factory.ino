@@ -87,6 +87,7 @@ TaskHandle_t bleTaskHandle = NULL;
 TaskHandle_t imuTaskHandle = NULL;
 TaskHandle_t loop_TaskHandle = NULL;
 SemaphoreHandle_t xSemaphore;
+SemaphoreHandle_t buzzerSemaphore = NULL;
 int dx = 0, dy = 0;
 bool move_mouse = false;
 bool mouse_wheel = false;
@@ -99,12 +100,16 @@ void setup()
   Serial.begin(115200);
   Serial.println("setup");
 
+  xSemaphore = xSemaphoreCreateBinary();
+  buzzerSemaphore = xSemaphoreCreateBinary();
   lvgl_drv_init();
+  xSemaphoreGive(xSemaphore);
   Openinganimation();
   model_init();
   Check_Error_ui();
   enter_ui();
   sycn_init();
+  xSemaphoreGive(buzzerSemaphore);
 }
 
 void loop()
@@ -375,6 +380,21 @@ void loop_Task(void *pvParameters)
   }
 }
 
+void buzzerTask(void *pvParameters)
+{
+  while (1)
+  {
+    // 等待蜂鸣器触发信号
+    if (xSemaphoreTake(buzzerSemaphore, portMAX_DELAY) == pdTRUE)
+    {
+      Serial.println("buzzerTask");
+      tone(BUZZER_PIN, 1000, 500);
+      vTaskDelay(500);         // 等待蜂鸣器完成
+      noTone(BUZZER_PIN); // 确保停止发声
+    }
+  }
+}
+
 void sycn_init()
 {
   xTaskCreatePinnedToCore(
@@ -403,6 +423,15 @@ void sycn_init()
       1,
       &loop_TaskHandle,
       0);
+
+  xTaskCreatePinnedToCore(
+      buzzerTask,
+      "buzzer",
+      1024,
+      NULL,
+      1,
+      NULL,
+      1);
 }
 
 void scanI2C()
@@ -565,14 +594,6 @@ void model_init()
   btn_38.setEventCallback(Button_38_Callback);
   btn_boot.init(Button2, 50, nullptr);
   btn_boot.setEventCallback(Button_Boot_Callback);
-
-  // // /*********BUZZER**********/
-  if (xSemaphoreTake(xSemaphore, portMAX_DELAY) == pdTRUE)
-  {
-    Serial.println("Buzzer");
-    tone(BUZZER_PIN, 800, 500); // 发出1000Hz的音调
-    xSemaphoreGive(xSemaphore);
-  }
 }
 
 void lvgl_drv_init()
@@ -609,7 +630,6 @@ void lvgl_drv_init()
   indev_drv.read_cb = my_touchpad_read;
   lv_indev_drv_register(&indev_drv);
 
-  xSemaphore = xSemaphoreCreateBinary();
   xTaskCreatePinnedToCore(
       lvlg_task,
       "lvlg",
@@ -618,7 +638,6 @@ void lvgl_drv_init()
       3,
       NULL,
       1);
-  xSemaphoreGive(xSemaphore);
 }
 
 void bhi260_config()
