@@ -77,6 +77,13 @@
 * You can also choose `LilyGo T-Display-Bar` or `ESP32S3 Dev Module` as the board, but the partition table is fixed to **8M with spiffs(3M APP/1.5MB SPIFFS)**
 
 ## 5️⃣ FAQ
+### 5.1 battery info
+| battery capacity | battery voltage |  line  |
+| :--------------: | :-------------: | :----: |
+|      200mAh      |      4.2V       | 3 line |
+
+![Battery](./image/Battery.png)
+
 
 ## 6️⃣ PinMap
 
